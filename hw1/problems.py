@@ -60,7 +60,6 @@ def simpleSolver(n, formula):
                 if(not ret):
                     return False, count
                 jump = True
-                #TODO: learn something?
                 continue
         i = i + 1
     return False, count
@@ -107,7 +106,60 @@ def simpleHelp(f, ass, i, v, c):
 #         A count of how many variable assignments were tried
 ################################################################################
 def unitSolver(n, formula):
-    return False, 0
+    count = 0
+    jump = False
+    ass = {}
+    i = 0
+    tempf = formula
+    while i < n:
+        ass[i] = 0
+        tmp = ass
+        if not bcp(tempf, tmp, n):
+            ass[i] = 1
+            tmp = ass
+            tempf = formula
+            bcp(tempf, tmp, n)
+        i = i + 1
+    return False, count
+
+def bcp(f,a,n):
+    tmp = []
+    for clause in f:
+        if len(clause) == 1:
+            a[clause[0][1]] = not clause[0][0]
+            print "prop assign!", a
+            valid = check(f,a)
+            if(not valid):
+                return False
+                #valid, jv = getJumpVal(f,a,clause[0][1])
+                #if valid:
+                #    a[jv] = not a[jv]
+                #    return bcp(f,a,n)
+                #else:
+                #    print "done"
+                #    return False
+            if len(a) == n:
+                return True
+            continue
+        for var in a:
+            found = False
+            val = a[var]
+            for literal in clause:
+                tmp.append(literal)
+                if literal[1] == var:
+                    found = True
+                    tmp.remove(literal)
+                    print "pre-formula", f
+                    f.remove(clause)
+                    val = (val != literal[0])
+                    if val:
+                        tmp = [literal]
+                        break
+            if found:
+                f.append(tmp)
+                clause = tmp
+                print "post-formula", f
+            tmp = []
 
 ################################################################################
 # Clause Learning SAT Problem Solver                      
@@ -135,9 +187,15 @@ def main():
     h = [[(1,0)],[(0,1),(0,2)],[(0,1),(1,2)],[(1,1),(0,2)],[(1,1),(1,2)]]
     g = [[(0,0), (1, 1)],[(0,1), (0,2)],[(0,1), (1,2)]]
     #checkCheck(f)
-    simple(f, 5)
-    simple(h, 3)
-    simple(g, 3)
+    #simple(f, 5)
+    #simple(h, 3)
+    #simple(g, 3)
+    #unit(f,5)
+    #unit(h,3)
+    unit(g,3)
+
+def unit(f, n):
+    print unitSolver(n, f)
 
 def simple(f, n):
     print simpleSolver(n, f)
