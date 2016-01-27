@@ -1,3 +1,4 @@
+import copy
 ################################################################################
 # Check if a given partial assignment is consistent with the cnf
 # Input: formula is a CNF encoded as described in the problem set.
@@ -107,59 +108,60 @@ def simpleHelp(f, ass, i, v, c):
 ################################################################################
 def unitSolver(n, formula):
     count = 0
-    jump = False
     ass = {}
     i = 0
-    tempf = formula
+    tmp = copy.deepcopy(formula)
     while i < n:
-        ass[i] = 0
-        tmp = ass
-        if not bcp(tempf, tmp, n):
-            ass[i] = 1
-            tmp = ass
-            tempf = formula
-            bcp(tempf, tmp, n)
+        if i not in ass:
+            ass[i] = 0
+            count = count + 1
+        #else:
+            #ass[i] = not ass[i]
+        prop = True
+        print formula
+        print ass
+        while prop:
+            prop = bcp(formula, ass)
+            print formula
+            print ass
+            #ret = check(formula, ass)
+            #if not ret:
+            #    while ass[max(ass)] == 1:
+            #        del ass[max(ass)]
+            #    ass[max(ass)] = 1
+            #    print ass
+            #    count = count + 1
+        ret = check(formula, ass)
+        if not ret:
+            del ass[max(ass)]
+            while ass[max(ass)] == 1:
+                del ass[max(ass)]
+            ass[max(ass)] = 1
+            count = count + 1
+        print "tmp ", tmp
+        formula = tmp
         i = i + 1
     return False, count
 
-def bcp(f,a,n):
-    tmp = []
+def bcp(f,a):
     for clause in f:
         if len(clause) == 1:
+            if clause[0][1] in a:
+                continue
             a[clause[0][1]] = not clause[0][0]
-            print "prop assign!", a
-            valid = check(f,a)
-            if(not valid):
-                return False
-                #valid, jv = getJumpVal(f,a,clause[0][1])
-                #if valid:
-                #    a[jv] = not a[jv]
-                #    return bcp(f,a,n)
-                #else:
-                #    print "done"
-                #    return False
-            if len(a) == n:
-                return True
-            continue
+            return True #propogation successful
         for var in a:
-            found = False
             val = a[var]
             for literal in clause:
-                tmp.append(literal)
                 if literal[1] == var:
-                    found = True
-                    tmp.remove(literal)
-                    print "pre-formula", f
-                    f.remove(clause)
-                    val = (val != literal[0])
+                    #update clause based on assigment
+                    val = bool(literal[0]) != bool(val)
                     if val:
-                        tmp = [literal]
-                        break
-            if found:
-                f.append(tmp)
-                clause = tmp
-                print "post-formula", f
-            tmp = []
+                        f.remove(clause)
+                        f.append([literal])
+                    else:
+                        clause.remove(literal)
+    return False
 
 ################################################################################
 # Clause Learning SAT Problem Solver                      
