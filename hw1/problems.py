@@ -32,15 +32,21 @@ def simpleSolver(n, formula):
     while i < n:
         if(jump):
             ret, count = simpleHelp(formula, ass, i, 1, count)
-            jump = False
         else:
             ret, count = simpleHelp(formula, ass, i, 0, count)
         if ret:
+            jump = False
             if len(ass) == n:
                 return ass, count
             i = i + 1
             continue
         else:
+            if(jump):
+                #need to jump again
+                ret, i = getJumpVal(formula, ass, i)
+                if(not ret):
+                    return False, count
+                continue
             ret, count = simpleHelp(formula, ass, i, 1, count)
             if ret:
                 if len(ass) == n:
@@ -50,24 +56,29 @@ def simpleSolver(n, formula):
             else:
                 #both 0 and 1 produce failure
                 #jumpback
-                maxV = -1
-                clause = getClause(formula, ass)
-                for v in clause:
-                    if v[1] > maxV and ass[v[1]] != 1:
-                        maxV = v[1]
-                if maxV == -1:
+                ret, i = getJumpVal(formula, ass, i)
+                if(not ret):
                     return False, count
-                #prune ass
-                j = i
-                while j > maxV:
-                    del ass[j]
-                    j = j-1
-                i = maxV
                 jump = True
                 #TODO: learn something?
                 continue
         i = i + 1
     return False, count
+
+def getJumpVal(formula, ass, i):
+    maxV = -1
+    clause = getClause(formula, ass)
+    for v in clause:
+        if v[1] > maxV and ass[v[1]] != 1:
+            maxV = v[1]
+    if maxV == -1:
+        return False, 0
+    #prune ass
+    j = i
+    while j > maxV:
+        del ass[j]
+        j = j-1
+    return True, maxV
 
 def getClause(f,a):
     for clause in f:
@@ -122,9 +133,11 @@ def backjumpSolver(n, formula):
 def main():
     f = [[(1,0),(0,2),(0,3)],[(0,1),(1,4)],[(0,0), (0,1), (0,2), (0,3), (0,4)]]
     h = [[(1,0)],[(0,1),(0,2)],[(0,1),(1,2)],[(1,1),(0,2)],[(1,1),(1,2)]]
+    g = [[(0,0), (1, 1)],[(0,1), (0,2)],[(0,1), (1,2)]]
     #checkCheck(f)
     simple(f, 5)
     simple(h, 3)
+    simple(g, 3)
 
 def simple(f, n):
     print simpleSolver(n, f)
