@@ -114,12 +114,12 @@ def unitSolver(n, formula):
     while i < n:
         if i not in ass:
             ass[i] = 0
+            print "if", ass
             count = count + 1
         prop = True
         while prop:
             prop = bcp(formula, ass)
         ret = check(formula, ass)
-        print ret, formula, ass
         if not ret:
             del ass[max(ass)]
             i = i - 1
@@ -127,21 +127,45 @@ def unitSolver(n, formula):
                 del ass[max(ass)]
                 i = i - 1
             ass[max(ass)] = 1
-            count = count + 1
             print ass
+            count = count + 1
+            formula = deepcopy(tmp)
+            if not propVal(max(ass), ass[max(ass)], formula):
+                print "duh"
+            if(check(formula, ass) and len(ass) == n):
+                return True, count
+            formula = deepcopy(tmp)
+            continue
+        elif len(ass) == n:
+            return True, count
         formula = deepcopy(tmp)
         i = i + 1
     return False, count
 
+def propVal(var, val, f):
+    tmp = []
+    for clause in f:
+        for literal in clause:
+            if literal[1] == var:
+                val = val != literal[0]
+                if val:
+                    f.remove(clause)
+                    tmp.append([literal])
+                else:
+                    clause.remove(literal)
+                    if len(clause) == 0:
+                        return False
+    f.extend(tmp)
+    return True
+
 def bcp(f,a):
+    #print "prop", f, a
     for clause in f:
         if len(clause) == 1:
             if clause[0][1] in a:
-                print "clause", clause
                 if(a[clause[0][1]] == (1 if not clause[0][0] else 0)):
                     continue
             a[clause[0][1]] = 1 if not clause[0][0] else 0
-            print "prop", a
             return True #propogation successful
         for var in a:
             val = a[var]
@@ -151,9 +175,11 @@ def bcp(f,a):
                     val = bool(literal[0]) != bool(val)
                     if val:
                         f.remove(clause)
-                        f.append([literal])
+                        clause = [literal]
+                        f.append(clause)
                     else:
                         clause.remove(literal)
+                        
     return False
 
 ################################################################################
