@@ -1,4 +1,4 @@
-import copy
+from copy import deepcopy
 ################################################################################
 # Check if a given partial assignment is consistent with the cnf
 # Input: formula is a CNF encoded as described in the problem set.
@@ -110,36 +110,26 @@ def unitSolver(n, formula):
     count = 0
     ass = {}
     i = 0
-    tmp = copy.deepcopy(formula)
+    tmp = deepcopy(formula)
     while i < n:
         if i not in ass:
             ass[i] = 0
             count = count + 1
-        #else:
-            #ass[i] = not ass[i]
         prop = True
-        print formula
-        print ass
         while prop:
             prop = bcp(formula, ass)
-            print formula
-            print ass
-            #ret = check(formula, ass)
-            #if not ret:
-            #    while ass[max(ass)] == 1:
-            #        del ass[max(ass)]
-            #    ass[max(ass)] = 1
-            #    print ass
-            #    count = count + 1
         ret = check(formula, ass)
+        print ret, formula, ass
         if not ret:
             del ass[max(ass)]
+            i = i - 1
             while ass[max(ass)] == 1:
                 del ass[max(ass)]
+                i = i - 1
             ass[max(ass)] = 1
             count = count + 1
-        print "tmp ", tmp
-        formula = tmp
+            print ass
+        formula = deepcopy(tmp)
         i = i + 1
     return False, count
 
@@ -147,8 +137,11 @@ def bcp(f,a):
     for clause in f:
         if len(clause) == 1:
             if clause[0][1] in a:
-                continue
-            a[clause[0][1]] = not clause[0][0]
+                print "clause", clause
+                if(a[clause[0][1]] == (1 if not clause[0][0] else 0)):
+                    continue
+            a[clause[0][1]] = 1 if not clause[0][0] else 0
+            print "prop", a
             return True #propogation successful
         for var in a:
             val = a[var]
