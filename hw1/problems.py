@@ -111,11 +111,11 @@ def unitSolver(n, formula):
     valid = True
     ass = {}
     i = 0
+    if not check(formula, ass):
+        return False, count #no valid assignment
     if not propSingles(formula, ass):
         return False, count
     #all singletons assigned and propagated
-    if not check(formula, ass):
-        return False, count #no valid assignment
     tmp = deepcopy(formula)
     while i < n:
         if i not in ass:
@@ -130,7 +130,9 @@ def unitSolver(n, formula):
             continue
         valid = True
         count = count + 1 #count branching assignments
-        if propVal(i, ass[i], formula):
+        if not check(formula, ass):
+            del ass[max(ass)]
+        elif propVal(i, ass[i], formula):
             propSingles(formula, ass)
             if check(formula, ass):
                 if len(ass) == n:
@@ -147,34 +149,45 @@ def unitSolver(n, formula):
     return False, count
 
 def propSingles(formula, ass):
-    for clause in formula:
-        if len(clause) == 1:
-            var = clause[0][1]
-            ass[var] = 0 if clause[0][0] else 1
-            if not propVal(var, ass[var], formula):
-                return False
-            if not check(formula, ass):
-                return False
+    recurse = True
+    while recurse:
+        recurse = False
+        for clause in formula:
+            if len(clause) == 1:
+                var = clause[0][1]
+                if var not in ass:
+                    ass[var] = 0 if clause[0][0] else 1
+                    ret = propVal(var, ass[var], formula)
+                    if not ret:
+                        return False
+                    if ret == -1:
+                        recurse = True
+                    if not check(formula, ass):
+                        return False
     return True
 
 def propVal(var, val, f):
     tmp = []
+    ret = True
     for clause in f:
         for literal in clause:
             if literal[1] == var:
                 val = val != literal[0]
                 if val:
                     f.remove(clause)
-                    tmp.append([literal])
+                    tmp.insert(0,[literal])
                 else:
                     clause.remove(literal)
                     if len(clause) == 1:
+                        #special case, need to recurse
+                        #another call to propSingles
+                        ret = -1
                         f.remove(clause)
                         tmp.append(clause)
                     if len(clause) == 0:
                         return False
     f.extend(tmp)
-    return True
+    return ret
 
 ################################################################################
 # Clause Learning SAT Problem Solver                      
