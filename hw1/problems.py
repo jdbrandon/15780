@@ -108,39 +108,52 @@ def simpleHelp(f, ass, i, v, c):
 ################################################################################
 def unitSolver(n, formula):
     count = 0
+    valid = True
     ass = {}
     i = 0
+    propSingles(formula, ass)
+    #all singletons assigned and propagated
+    if not check(formula, ass):
+        return False, count #no valid assignment
     tmp = deepcopy(formula)
     while i < n:
         if i not in ass:
             ass[i] = 0
-            print "if", ass
-            count = count + 1
-        prop = True
-        while prop:
-            prop = bcp(formula, ass)
-        ret = check(formula, ass)
-        if not ret:
-            del ass[max(ass)]
-            i = i - 1
-            while ass[max(ass)] == 1:
-                del ass[max(ass)]
-                i = i - 1
-            ass[max(ass)] = 1
-            print ass
-            count = count + 1
-            formula = deepcopy(tmp)
-            if not propVal(max(ass), ass[max(ass)], formula):
-                print "duh"
-            if(check(formula, ass) and len(ass) == n):
-                return True, count
-            formula = deepcopy(tmp)
+        elif ass[i] == 0 and not valid:
+            #flag takes care of unit propagation case
+            #otherwise flip value
+            ass[i] = 1
+        else:
+            #ass[i] == 1 or 0 and valid
+            i = i + 1
             continue
-        elif len(ass) == n:
-            return True, count
+        valid = True
+        count = count + 1 #count branching assignments
+        if propVal(i, ass[i], formula):
+            propSingles(formula, ass)
+            if check(formula, ass):
+                if len(ass) == n:
+                    return True, count
+                else:
+                    i = i + 1
+                    continue
+        #fail and backtrack
+        valid = False
         formula = deepcopy(tmp)
-        i = i + 1
+        while ass[max(ass)] == 1:
+            del ass[max(ass)]
+        i = max(ass) if len(ass) > 0 else 0
     return False, count
+
+def propSingles(formula, ass):
+    for clause in formula:
+        if len(clause) == 1:
+            var = clause[0][1]
+            ass[var] = 0 if clause[0][0] else 1
+            if not propVal(var, ass[var], formula):
+                return False
+            if not check(formula, ass):
+                return False
 
 def propVal(var, val, f):
     tmp = []
@@ -153,34 +166,13 @@ def propVal(var, val, f):
                     tmp.append([literal])
                 else:
                     clause.remove(literal)
+                    if len(clause) == 1:
+                        f.remove(clause)
+                        tmp.append(clause)
                     if len(clause) == 0:
                         return False
     f.extend(tmp)
     return True
-
-def bcp(f,a):
-    #print "prop", f, a
-    for clause in f:
-        if len(clause) == 1:
-            if clause[0][1] in a:
-                if(a[clause[0][1]] == (1 if not clause[0][0] else 0)):
-                    continue
-            a[clause[0][1]] = 1 if not clause[0][0] else 0
-            return True #propogation successful
-        for var in a:
-            val = a[var]
-            for literal in clause:
-                if literal[1] == var:
-                    #update clause based on assigment
-                    val = bool(literal[0]) != bool(val)
-                    if val:
-                        f.remove(clause)
-                        clause = [literal]
-                        f.append(clause)
-                    else:
-                        clause.remove(literal)
-                        
-    return False
 
 ################################################################################
 # Clause Learning SAT Problem Solver                      
