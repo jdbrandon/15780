@@ -111,7 +111,8 @@ def unitSolver(n, formula):
     valid = True
     ass = {}
     i = 0
-    propSingles(formula, ass)
+    if not propSingles(formula, ass):
+        return False, count
     #all singletons assigned and propagated
     if not check(formula, ass):
         return False, count #no valid assignment
@@ -154,6 +155,7 @@ def propSingles(formula, ass):
                 return False
             if not check(formula, ass):
                 return False
+    return True
 
 def propVal(var, val, f):
     tmp = []
