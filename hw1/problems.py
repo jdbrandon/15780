@@ -134,7 +134,7 @@ def unitSolver(n, formula):
             propSingles(formula, ass)
             if check(formula, ass):
                 if len(ass) == n:
-                    return True, count
+                    return ass, count
                 else:
                     i = i + 1
                     continue
