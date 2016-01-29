@@ -87,7 +87,7 @@ def unitSolver(n, formula):
                         continue #skip backtrack
 #i is the index of the variable we last branched on, backtrack there
         #Case: backtracking
-        while max(ass) > i and ass[max(ass)] == 1:
+        while max(ass) > i:
             del ass[max(ass)]
         valid = False
         formula = myCopy(tmp)
@@ -127,8 +127,8 @@ def propVal(var, val, f):
     for clause in f:
         for literal in clause:
             if literal[1] == var:
-                val = bool(val) != bool(literal[0])
-                if val:
+                tval = bool(val) != bool(literal[0])
+                if tval:
                     f.remove(clause)
                     if [literal] not in f:
                         if [literal] not in tmp:
