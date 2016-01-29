@@ -91,7 +91,6 @@ def getClause(f,a):
                 break
         if(not ret):
             return clause
-    print "error!!!"
     return []
 
 def simpleHelp(f, ass, i, v, c):
@@ -133,18 +132,19 @@ def unitSolver(n, formula):
         if not check(formula, ass):
             del ass[max(ass)]
         elif propVal(i, ass[i], formula):
-            propSingles(formula, ass)
-            if check(formula, ass):
-                if len(ass) == n:
-                    return ass, count
-                else:
-                    i = i + 1
-                    continue
+            if propSingles(formula, ass):
+                if check(formula, ass):
+                    if len(ass) == n:
+                        return ass, count
+                    else:
+                        i = i + 1
+                        continue
         #fail and backtrack
         valid = False
         formula = deepcopy(tmp)
-        while ass[max(ass)] == 1:
-            del ass[max(ass)]
+        if len(ass) > 0:
+            while ass[max(ass)] == 1:
+                del ass[max(ass)]
         i = max(ass) if len(ass) > 0 else 0
     return False, count
 
