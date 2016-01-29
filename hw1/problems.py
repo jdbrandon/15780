@@ -180,49 +180,6 @@ def clauseLearningSolver(n, formula):
 #         A count of how many variable assignments where tried
 ################################################################################
 def backjumpSolver(n, formula):
-    count = 0
-    ass = {}
-    i = 0
-    if not propSingles(formula, ass):
-        return False, count, []
-    valid = True
-    tmp = myCopy(formula)
-    while i < n:
-        if i not in ass:
-            ass[i] = 0
-        elif ass[i] == 0 and not valid:
-            ass[i] = 1
-        else:
-            i = i + 1
-            continue
-        count = count + 1
-        valid = True
-        if check(formula, ass):
-            if len(ass) == n:
-                return ass, count
-            if propVal(i, ass[i], formula):
-                if propSingles(formula, ass):
-                    if check(formula, ass):
-                        if len(ass) == n:
-                            #TODO: ret clauses
-                            return ass, count
-                        i = i + 1
-                        continue #skip backtrack
-#i is the index of the variable we last branched on, backtrack there
-        #Case: backtracking
-        while max(ass) > i: #backjump
-            del ass[max(ass)]
-        valid = False
-        formula = myCopy(tmp)
-        if ass[i] == 0:
-            continue
-        elif ass[i] == 1:
-            while i >= 0 and ass[i] == 1:
-                del ass[i]
-                i = i - 1
-            if i == -1:
-                return False, count
-    return False, count,[]
 
 def main():
     f = [[(1,0),(0,2),(0,3)],[(0,1),(1,4)],[(0,0), (0,1), (0,2), (0,3), (0,4)]]
