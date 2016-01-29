@@ -1,4 +1,3 @@
-from copy import deepcopy
 ################################################################################
 # Check if a given partial assignment is consistent with the cnf
 # Input: formula is a CNF encoded as described in the problem set.
@@ -60,47 +59,51 @@ def simpleSolver(n, formula):
 ################################################################################
 def unitSolver(n, formula):
     count = 0
-    valid = True
     ass = {}
     i = 0
     if not check(formula, ass):
-        return False, count #no valid assignment
+        return False, count
     if not propSingles(formula, ass):
         return False, count
-    #all singletons assigned and propagated
-    tmp = deepcopy(formula)
+    valid = True
+    tmp = myCopy(formula)
     while i < n:
         if i not in ass:
             ass[i] = 0
         elif ass[i] == 0 and not valid:
-            #flag takes care of unit propagation case
-            #otherwise flip value
             ass[i] = 1
         else:
-            #ass[i] == 1 or 0 and valid
             i = i + 1
             continue
+        count = count + 1
         valid = True
-        count = count + 1 #count branching assignments
-        if not check(formula, ass):
-            del ass[max(ass)]
-        elif propVal(i, ass[i], formula):
-            if propSingles(formula, ass):
-                if check(formula, ass):
-                    if len(ass) == n:
-                        return ass, count
-                    else:
+        if check(formula, ass):
+            if len(ass) == n:
+                return ass, count
+            if propVal(i, ass[i], formula):
+                if propSingles(formula, ass):
+                    if check(formula, ass):
+                        if len(ass) == n:
+                            return ass, count
                         i = i + 1
-                        continue
-        #fail and backtrack
+                        continue #skip backtrack
+#i is the index of the variable we last branched on, backtrack there
+        #Case: backtracking
+        while max(ass) > i and ass[max(ass)] == 1:
+            del ass[max(ass)]
         valid = False
-        formula = deepcopy(tmp)
-        if len(ass) > 0:
-            while ass[max(ass)] == 1:
-                del ass[max(ass)]
-        i = max(ass) if len(ass) > 0 else 0
+        formula = myCopy(tmp)
+        if ass[i] == 0:
+            continue
+        elif ass[i] == 1:
+            while i >= 0 and ass[i] == 1:
+                del ass[i]
+                i = i - 1
+            if i == -1:
+                return False, count
     return False, count
 
+#Returns false if assignment fails
 def propSingles(formula, ass):
     recurse = True
     while recurse:
@@ -110,25 +113,28 @@ def propSingles(formula, ass):
                 var = clause[0][1]
                 if var not in ass:
                     ass[var] = 0 if clause[0][0] else 1
+                    if not check(formula, ass):
+                        return False
                     ret = propVal(var, ass[var], formula)
                     if not ret:
                         return False
                     if ret == -1:
                         recurse = True
-                    if not check(formula, ass):
-                        return False
     return True
 
+#Returns false when a contradiction occurs
 def propVal(var, val, f):
     tmp = []
     ret = True
     for clause in f:
         for literal in clause:
             if literal[1] == var:
-                val = val != literal[0]
+                val = bool(val) != bool(literal[0])
                 if val:
                     f.remove(clause)
-                    tmp.insert(0,[literal])
+                    if [literal] not in f:
+                        if [literal] not in tmp:
+                            tmp.insert(0,[literal])
                 else:
                     clause.remove(literal)
                     if len(clause) == 1:
@@ -140,6 +146,15 @@ def propVal(var, val, f):
                     if len(clause) == 0:
                         return False
     f.extend(tmp)
+    return ret
+
+def myCopy(f):
+    ret = []
+    for clause in f:
+        tmp = []
+        for literal in clause:
+            tmp.append((literal[0],literal[1]))
+        ret.append(tmp)
     return ret
 
 ################################################################################
@@ -161,7 +176,51 @@ def clauseLearningSolver(n, formula):
 #         A count of how many variable assignments where tried
 ################################################################################
 def backjumpSolver(n, formula):
-    return False, 0, []
+    count = 0
+    ass = {}
+    i = 0
+    if not check(formula, ass):
+        return False, count, []
+    if not propSingles(formula, ass):
+        return False, count, []
+    valid = True
+    tmp = myCopy(formula)
+    while i < n:
+        if i not in ass:
+            ass[i] = 0
+        elif ass[i] == 0 and not valid:
+            ass[i] = 1
+        else:
+            i = i + 1
+            continue
+        count = count + 1
+        valid = True
+        if check(formula, ass):
+            if len(ass) == n:
+                return ass, count
+            if propVal(i, ass[i], formula):
+                if propSingles(formula, ass):
+                    if check(formula, ass):
+                        if len(ass) == n:
+                            #TODO: ret clauses
+                            return ass, count
+                        i = i + 1
+                        continue #skip backtrack
+#i is the index of the variable we last branched on, backtrack there
+        #Case: backtracking
+        while max(ass) > i: #backjump
+            del ass[max(ass)]
+        valid = False
+        formula = myCopy(tmp)
+        if ass[i] == 0:
+            continue
+        elif ass[i] == 1:
+            while i >= 0 and ass[i] == 1:
+                del ass[i]
+                i = i - 1
+            if i == -1:
+                return False, count
+    return False, count,[]
 
 def main():
     f = [[(1,0),(0,2),(0,3)],[(0,1),(1,4)],[(0,0), (0,1), (0,2), (0,3), (0,4)]]
