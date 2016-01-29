@@ -124,28 +124,23 @@ def propSingles(formula, ass):
 
 #Returns false when a contradiction occurs
 def propVal(var, val, f):
-    tmp = []
     ret = True
     for clause in f:
         for literal in clause:
             if literal[1] == var:
                 tval = bool(val) != bool(literal[0])
                 if tval:
-                    f.remove(clause)
-                    if [literal] not in f:
-                        if [literal] not in tmp:
-                            tmp.insert(0,[literal])
+                    for l2 in clause:
+                        if l2 != literal:
+                            clause.remove(l2)
                 else:
                     clause.remove(literal)
                     if len(clause) == 1:
                         #special case, need to recurse
                         #another call to propSingles
                         ret = -1
-                        f.remove(clause)
-                        tmp.append(clause)
                     if len(clause) == 0:
                         return False
-    f.extend(tmp)
     return ret
 
 def myCopy(f):
