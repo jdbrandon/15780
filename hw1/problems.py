@@ -59,6 +59,7 @@ def simpleSolver(n, formula):
 ################################################################################
 def unitSolver(n, formula):
     count = 0
+    bval = []
     ass = {}
     i = 0
     if not propSingles(formula, ass):
@@ -68,6 +69,7 @@ def unitSolver(n, formula):
     while i < n:
         if i not in ass:
             ass[i] = 0
+            bval.append(i)
         elif ass[i] == 0 and not valid:
             ass[i] = 1
         else:
@@ -85,20 +87,20 @@ def unitSolver(n, formula):
                             return ass, count
                         i = i + 1
                         continue #skip backtrack
-#i is the index of the variable we last branched on, backtrack there
         #Case: backtracking
-        while max(ass) > i:
-            del ass[max(ass)]
+        dellist = []
+        for v in ass:
+            if v not in bval:
+                dellist.append(v)
+        for v in dellist:
+            del ass[v]
         valid = False
         formula = myCopy(tmp)
         if ass[i] == 0:
-            continue
+            continue #try the 1 branch of this variable
         elif ass[i] == 1:
-            while i >= 0 and ass[i] == 1:
-                del ass[i]
-                i = i - 1
-            if i == -1:
-                return False, count
+            #backtrack to previous branch val
+            i = bval.pop()
     return False, count
 
 #Returns false if assignment fails
