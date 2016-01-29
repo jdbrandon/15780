@@ -27,76 +27,29 @@ def check(formula, ass):
 ################################################################################
 def simpleSolver(n, formula):
     count = 0
-    jump = False
     ass = {}
     i = 0
     while i < n:
-        if(jump):
-            ret, count = simpleHelp(formula, ass, i, 1, count)
-        else:
-            ret, count = simpleHelp(formula, ass, i, 0, count)
-        if ret:
-            jump = False
+        if i not in ass:
+            ass[i] = 0
+        elif ass[i] == 0:
+            ass[i] = 1
+        count = count + 1
+        if check(formula, ass):
             if len(ass) == n:
                 return ass, count
-            i = i + 1
-            continue
         else:
-            if(jump):
-                #need to jump again
-                ret, i = getJumpVal(formula, ass, i)
-                if(not ret):
-                    return False, count
+            if ass[i] == 0:
                 continue
-            ret, count = simpleHelp(formula, ass, i, 1, count)
-            if ret:
-                if len(ass) == n:
-                    return ass, count
-                i = i + 1
-                continue
-            else:
-                #both 0 and 1 produce failure
-                #jumpback
-                ret, i = getJumpVal(formula, ass, i)
-                if(not ret):
+            elif ass[i] == 1:
+                while i >= 0 and ass[i] == 1:
+                    del ass[i]
+                    i = i - 1
+                if i == -1:
                     return False, count
-                jump = True
                 continue
         i = i + 1
     return False, count
-
-def getJumpVal(formula, ass, i):
-    maxV = -1
-    clause = getClause(formula, ass)
-    for v in clause:
-        if v[1] > maxV and ass[v[1]] != 1:
-            maxV = v[1]
-    if maxV == -1:
-        return False, 0
-    #prune ass
-    j = i
-    while j > maxV:
-        del ass[j]
-        j = j-1
-    return True, maxV
-
-def getClause(f,a):
-    for clause in f:
-        ret = 0;
-        for v in clause:
-            if(v[1] in a):
-                ret = ret or (a[v[1]] if v[0] == 0 else not a[v[1]])
-            else:
-                ret = 1
-                break
-        if(not ret):
-            return clause
-    return []
-
-def simpleHelp(f, ass, i, v, c):
-    ass[i] = v
-    c = c + 1
-    return check(f, ass), c
 
 ################################################################################
 # Simple Sat Problem Solver with unit propagation
