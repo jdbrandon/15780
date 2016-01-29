@@ -91,7 +91,8 @@ def unitSolver(n, formula):
         dellist = []
         for v in ass:
             if v not in bval:
-                dellist.append(v)
+                if v != i:
+                    dellist.append(v)
         for v in dellist:
             del ass[v]
         valid = False
