@@ -108,7 +108,7 @@ def unitSolver(n, formula):
     return False, count
 
 #Returns false if assignment fails
-def propSingles(formula, ass):
+def propSingles(formula, ass, recent = -1):
     recurse = True
     while recurse:
         recurse = False
@@ -117,18 +117,21 @@ def propSingles(formula, ass):
                 var = clause[0][1]
                 if var not in ass:
                     ass[var] = 0 if clause[0][0] else 1
+                    recent = var
+                    print "prop", ass
                     if not check(formula, ass):
-                        return False
+                        return False, recent
                     ret = propVal(var, ass[var], formula)
                     if not ret:
-                        return False
+                        return False, recent
                     if ret == -1:
                         recurse = True
                 elif bool(ass[var]) == bool(clause[0][0]):
                     #a singleton for which the current assigment
                     #will always produce a false clause
                     return False
-    return True
+    print "r",recent
+    return True, recent
 
 #Returns false when a contradiction occurs
 def propVal(var, val, f):
@@ -170,7 +173,79 @@ def myCopy(f):
 #         A list of all conflict-induced clauses that were found
 ################################################################################
 def clauseLearningSolver(n, formula):
-    return False, 0, []
+    count = 0
+    bval = []
+    ass = {}
+    ig = None
+    learned = []
+    recent = -1
+    level = 0
+    i = 0
+    if not propSingles(formula, ass):
+        return False, count, learned
+    valid = True
+    tmp = myCopy(formula)
+    while i < n:
+        if i not in ass:
+            ass[i] = 0
+            print "0",ass
+            bval.append(i)
+            ig = Node(level, i, ass[i], [])
+            print "implies", ig.implies
+        elif ass[i] == 0 and not valid:
+            ass[i] = 1
+            print "1",ass
+        else:
+            i = i + 1
+            continue
+        recent = i
+        count = count + 1
+        valid = True
+        if check(formula, ass):
+            if len(ass) == n:
+                return ass, count, learned
+            if propVal(i, ass[i], formula):
+                ret, recent = propSingles(formula, ass, recent)
+                print "r",recent
+                if ret:
+                    if check(formula, ass):
+                        if len(ass) == n:
+                            return ass, count, learned
+                        i = i + 1
+                        continue #skip backtrack
+        #Case: backtracking
+        print "learn", ass
+        learned.append(createLearnedClause(ass, bval, recent))
+        recent = -1
+        dellist = []
+        for v in ass:
+            if v not in bval:
+                if v != i:
+                    dellist.append(v)
+        for v in dellist:
+            del ass[v]
+        print "del",ass
+        valid = False
+        formula = myCopy(tmp)
+        if ass[i] == 0:
+            continue #try the 1 branch of this variable
+        elif ass[i] == 1:
+            #backtrack to previous branch val
+            while ass[i] == 1 and len(bval) > 0:
+                i = bval.pop()
+            recent = i
+            if len(bval) == 0:
+                return False, count, learned
+    return False, count, learned
+
+def createLearnedClause(a,b,r):
+    print a,b,r
+    clause = []
+    for v in a:
+        if v in b or v == r:
+            continue
+        clause.append((a[v],v)) #value of variable becomes negation bit... woah
+    return clause
 
 ################################################################################
 # Conflict-directed backjumping with clause learning SAT Problem Solver                      
@@ -193,8 +268,12 @@ def main():
     #simple(g, 3)
     #unit(f,5)
     #unit(h,3)
-    unit(g,3)
+    #unit(g,3)
     #unit(m,1)
+    claus(g,3)
+
+def claus(f, n):
+    print clauseLearningSolver(n, f)
 
 def unit(f, n):
     print unitSolver(n, f)
@@ -211,6 +290,18 @@ def checkCheck(f):
     print check(f,c)
     print check(f, {4:1});
     print check(f, {4:1, 1:0});
+
+class Node:
+    level = 0
+    var = 0
+    val = 0
+    impliedBy = []
+    implies = []
+    def __init__(self, level, var, val, implied):
+        self.level = level
+        self.var = var
+        self.val = val
+        self.impliedBy.extend(implied)
 
 if __name__ == "__main__":
     main()
