@@ -180,6 +180,7 @@ def clauseLearningSolver(n, formula):
 #         A count of how many variable assignments where tried
 ################################################################################
 def backjumpSolver(n, formula):
+    return False, 0, []
 
 def main():
     f = [[(1,0),(0,2),(0,3)],[(0,1),(1,4)],[(0,0), (0,1), (0,2), (0,3), (0,4)]]
