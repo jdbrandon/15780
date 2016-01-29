@@ -100,7 +100,10 @@ def unitSolver(n, formula):
             continue #try the 1 branch of this variable
         elif ass[i] == 1:
             #backtrack to previous branch val
-            i = bval.pop()
+            while ass[i] == 1 and len(bval) > 0:
+                i = bval.pop()
+            if len(bval) == 0
+                return False, count
     return False, count
 
 #Returns false if assignment fails
@@ -120,7 +123,7 @@ def propSingles(formula, ass):
                         return False
                     if ret == -1:
                         recurse = True
-                elif ass[var] == clause[0][0]:
+                elif bool(ass[var]) == bool(clause[0][0]):
                     #a singleton for which the current assigment
                     #will always produce a false clause
                     return False
