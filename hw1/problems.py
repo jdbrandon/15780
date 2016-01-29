@@ -102,7 +102,7 @@ def unitSolver(n, formula):
             #backtrack to previous branch val
             while ass[i] == 1 and len(bval) > 0:
                 i = bval.pop()
-            if len(bval) == 0
+            if len(bval) == 0:
                 return False, count
     return False, count
 
