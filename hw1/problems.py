@@ -120,6 +120,10 @@ def propSingles(formula, ass):
                         return False
                     if ret == -1:
                         recurse = True
+                elif ass[var] == clause[0][0]:
+                    #a singleton for which the current assigment
+                    #will always produce a false clause
+                    return False
     return True
 
 #Returns false when a contradiction occurs
