@@ -133,6 +133,7 @@ def propVal(var, val, f):
                     for l2 in clause:
                         if l2 != literal:
                             clause.remove(l2)
+                    break
                 else:
                     clause.remove(literal)
                     if len(clause) == 1:
