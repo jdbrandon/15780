@@ -61,8 +61,6 @@ def unitSolver(n, formula):
     count = 0
     ass = {}
     i = 0
-    if not check(formula, ass):
-        return False, count
     if not propSingles(formula, ass):
         return False, count
     valid = True
@@ -179,8 +177,6 @@ def backjumpSolver(n, formula):
     count = 0
     ass = {}
     i = 0
-    if not check(formula, ass):
-        return False, count, []
     if not propSingles(formula, ass):
         return False, count, []
     valid = True
@@ -226,6 +222,7 @@ def main():
     f = [[(1,0),(0,2),(0,3)],[(0,1),(1,4)],[(0,0), (0,1), (0,2), (0,3), (0,4)]]
     h = [[(1,0)],[(0,1),(0,2)],[(0,1),(1,2)],[(1,1),(0,2)],[(1,1),(1,2)]]
     g = [[(0,0), (1, 1)],[(0,1), (0,2)],[(0,1), (1,2)]]
+    m = [[(0,0)],[(1,0)]]
     #checkCheck(f)
     #simple(f, 5)
     #simple(h, 3)
@@ -233,6 +230,7 @@ def main():
     #unit(f,5)
     #unit(h,3)
     unit(g,3)
+    #unit(m,1)
 
 def unit(f, n):
     print unitSolver(n, f)
