@@ -108,7 +108,7 @@ def unitSolver(n, formula):
     return False, count
 
 #Returns false if assignment fails
-def propSingles(formula, ass, recent = -1):
+def propSingles(formula, ass, recent = -1, level =-1, ig = None):
     recurse = True
     while recurse:
         recurse = False
@@ -117,8 +117,9 @@ def propSingles(formula, ass, recent = -1):
                 var = clause[0][1]
                 if var not in ass:
                     ass[var] = 0 if clause[0][0] else 1
+                    if ig != None:
+                        recurse = ig[var].assign(level, ass[var], ass)
                     recent = var
-                    print "prop", ass
                     if not check(formula, ass):
                         return False, recent
                     ret = propVal(var, ass[var], formula)
@@ -130,7 +131,6 @@ def propSingles(formula, ass, recent = -1):
                     #a singleton for which the current assigment
                     #will always produce a false clause
                     return False
-    print "r",recent
     return True, recent
 
 #Returns false when a contradiction occurs
@@ -176,7 +176,7 @@ def clauseLearningSolver(n, formula):
     count = 0
     bval = []
     ass = {}
-    ig = None
+    ig = []
     learned = []
     recent = -1
     level = 0
@@ -185,28 +185,43 @@ def clauseLearningSolver(n, formula):
         return False, count, learned
     valid = True
     tmp = myCopy(formula)
+    #Initialize nodes
+    for j in range(0,n):
+        ig.append(Node(j, formula))
+    #Begin search algorithm
     while i < n:
+        node = ig[i]
         if i not in ass:
             ass[i] = 0
-            print "0",ass
             bval.append(i)
-            ig = Node(level, i, ass[i], [])
-            print "implies", ig.implies
         elif ass[i] == 0 and not valid:
             ass[i] = 1
-            print "1",ass
+            level = node.level
+#TODO: may beed to update more on previously implied nodes
+            for k in node.impliedBy:
+                ig[k].implies.remove(node.var)
+            node.impliedBy = []
+            for k in node.implies:
+                ig[k].impliedBy.remove(node.var)
+            node.implies =[]
         else:
             i = i + 1
             continue
         recent = i
+        imp = node.assign(ass[i], level, ass)
+        level = level + 1
         count = count + 1
         valid = True
+
+        if imp:
+            #must be done before assigment made via propagation
+            updateAssociations(ass, ig, node)
+
         if check(formula, ass):
             if len(ass) == n:
                 return ass, count, learned
             if propVal(i, ass[i], formula):
-                ret, recent = propSingles(formula, ass, recent)
-                print "r",recent
+                ret, recent = propSingles(formula, ass, recent, level, ig)
                 if ret:
                     if check(formula, ass):
                         if len(ass) == n:
@@ -214,8 +229,9 @@ def clauseLearningSolver(n, formula):
                         i = i + 1
                         continue #skip backtrack
         #Case: backtracking
-        print "learn", ass
-        learned.append(createLearnedClause(ass, bval, recent))
+#TODO: fix this to use ig and stuff
+        printReadable(ig)
+        #learned.append()
         recent = -1
         dellist = []
         for v in ass:
@@ -224,7 +240,6 @@ def clauseLearningSolver(n, formula):
                     dellist.append(v)
         for v in dellist:
             del ass[v]
-        print "del",ass
         valid = False
         formula = myCopy(tmp)
         if ass[i] == 0:
@@ -238,14 +253,28 @@ def clauseLearningSolver(n, formula):
                 return False, count, learned
     return False, count, learned
 
-def createLearnedClause(a,b,r):
-    print a,b,r
-    clause = []
-    for v in a:
-        if v in b or v == r:
-            continue
-        clause.append((a[v],v)) #value of variable becomes negation bit... woah
-    return clause
+def printReadable(ig):
+    for n in ig:
+        print "var:",n.var,"val:",n.val
+        print "\timplied by:", n.impliedBy
+        print "\timplies:", n.implies
+
+def updateAssociations(ass, ig, n):
+    for i in n.implies:
+        node = ig[i]
+        s = set(n.clauses)
+        clauseIntersect = [val for val in node.clauses if val in s]
+        for c in clauseIntersect:
+            count = len(c)
+            for l in c:
+                if l[1] in ass:
+                    count = count - 1
+            if count == 1:
+                for l in c:
+                    if l[1] != node.var
+                        node.impliedBy.append(l[1])
+                        if l[1] != n.var:
+                            ig[l[1]].implies.append(node.var)
 
 ################################################################################
 # Conflict-directed backjumping with clause learning SAT Problem Solver                      
@@ -292,16 +321,43 @@ def checkCheck(f):
     print check(f, {4:1, 1:0});
 
 class Node:
-    level = 0
-    var = 0
-    val = 0
-    impliedBy = []
-    implies = []
-    def __init__(self, level, var, val, implied):
-        self.level = level
+    #level
+    #var
+    #val 
+    #impliedBy = []
+    #implies = []
+    #clauses = []
+    def __init__(self, var, formula):
         self.var = var
+        self.impliedBy = []
+        self.implies = []
+        self.clauses = []
+        for c in formula:
+            for l in c:
+                if l[1] == var:
+                    self.clauses.append(c)
+                    break
+
+    def assign(self, val, level, ass):
+        if self.var not in ass:
+            print "oops I'm kind of an idiot"
         self.val = val
-        self.impliedBy.extend(implied)
+        self.level = level
+        ret = False
+        for c in clauses:
+            count = len(c)
+            for l in c:
+                if l[1] in ass:
+                    count = count - 1
+                else:
+                    v = l
+            if count == 1:
+                print "implication",v
+                #implication of v
+                self.implies.append(v)
+                ret = True
+        return ret
+
 
 if __name__ == "__main__":
     main()
