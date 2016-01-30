@@ -271,7 +271,7 @@ def updateAssociations(ass, ig, n):
                     count = count - 1
             if count == 1:
                 for l in c:
-                    if l[1] != node.var
+                    if l[1] != node.var:
                         node.impliedBy.append(l[1])
                         if l[1] != n.var:
                             ig[l[1]].implies.append(node.var)
