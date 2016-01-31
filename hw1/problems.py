@@ -62,7 +62,7 @@ def unitSolver(n, formula):
     bval = []
     ass = {}
     i = 0
-    if not propSingles(formula, ass):
+    if not propSinglesUnit(formula, ass):
         return False, count
     valid = True
     tmp = myCopy(formula)
@@ -81,7 +81,7 @@ def unitSolver(n, formula):
             if len(ass) == n:
                 return ass, count
             if propVal(i, ass[i], formula):
-                if propSingles(formula, ass):
+                if propSinglesUnit(formula, ass):
                     if check(formula, ass):
                         if len(ass) == n:
                             return ass, count
@@ -106,6 +106,28 @@ def unitSolver(n, formula):
             if len(bval) == 0:
                 return False, count
     return False, count
+
+def propSinglesUnit(formula, ass):
+    recurse = True
+    while recurse:
+        recurse = False
+        for clause in formula:
+            if len(clause) == 1:
+                var = clause[0][1]
+                if var not in ass:
+                    ass[var] = 0 if clause[0][0] else 1
+                    if not check(formula, ass):
+                        return False
+                    ret = propVal(var, ass[var], formula)
+                    if not ret:
+                        return False
+                    if ret == -1:
+                        recurse = True
+                elif bool(ass[var]) == bool(clause[0][0]):
+                    #a singleton for which the current assigment
+                    #will always produce a false clause
+                    return False
+    return True
 
 #Returns false if assignment fails
 def propSingles(formula, ass, recent = -1, level =-1, ig = None):
@@ -333,6 +355,9 @@ def main():
     #unit(g,3)
     #unit(m,1)
     claus(g,3)
+    claus([[(0,0)], [(1,0),(0,1)]],2)
+    claus([[(0,0),(0,1),(0,2)],[(1,0),(1,1)],[(1,1),(1,2)],[(1,2),(1,0)]],4)
+    claus([[(0,0),(0,1),(0,2)],[(0,0),(0,1),(1,2)]],3)
 
 def claus(f, n):
     print clauseLearningSolver(n, f)
