@@ -182,13 +182,13 @@ def clauseLearningSolver(n, formula):
     recent = -1
     level = 0
     i = 0
-    if not propSingles(formula, ass):
-        return False, count, learned
-    valid = True
-    tmp = myCopy(formula)
     #Initialize nodes
     for j in range(0,n):
         ig.append(Node(j, formula))
+    if not propSingles(formula, ass, level=level, ig=ig):
+        return False, count, learned
+    valid = True
+    tmp = myCopy(formula)
     #Begin search algorithm
     while i < n:
         node = ig[i]
@@ -267,14 +267,13 @@ def getUIP(n, graph, level):
     else:
         #need to traverse up implication levels until shared parent
         i = 0
-        while len(shared) != 1:
-            for t in impl:
-                if graph[t].level == level:
-                    if t not in impl:
-                        impl.append(t)
-                    else:
-                        for v in graph[t].impliedBy:
-                            clause.append((graph[v].val,v))
+        for t in impl:
+            if graph[t].level == level:
+                if t not in impl:
+                    impl.append(t)
+                else:
+                    for v in graph[t].impliedBy:
+                        clause.append((graph[v].val,v))
 
     return clause
 #TODO: this may need to search more in current level
@@ -328,7 +327,7 @@ def main():
     #checkCheck(f)
     #simple(f, 5)
     #simple(h, 3)
-    #simple(g, 3)
+    simple(g, 3)
     #unit(f,5)
     #unit(h,3)
     #unit(g,3)
