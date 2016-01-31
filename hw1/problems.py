@@ -229,11 +229,8 @@ def clauseLearningSolver(n, formula):
                         continue #skip backtrack
         #Case: backtracking
 #TODO: fix this to use ig and stuff
-        print "backtracking Instance:", ass
-        printReadable(ig)
         conflictNode =  getLastDecided(ig)
         clause = getUIP(conflictNode, ig, level)
-        print clause
         learned.append(clause)
         recent = -1
         dellist = []
