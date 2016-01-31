@@ -118,7 +118,8 @@ def propSingles(formula, ass, recent = -1, level =-1, ig = None):
                 if var not in ass:
                     ass[var] = 0 if clause[0][0] else 1
                     if ig != None:
-                        recurse = ig[var].assign(level, ass[var], ass)
+                        recurse = ig[var].assign(ass[var], level, ass)
+                        updateAssociations(ass, ig, ig[var])
                     recent = var
                     if not check(formula, ass):
                         return False, recent
@@ -201,15 +202,12 @@ def clauseLearningSolver(n, formula):
             for k in node.impliedBy:
                 ig[k].implies.remove(node.var)
             node.impliedBy = []
-            for k in node.implies:
-                ig[k].impliedBy.remove(node.var)
             node.implies =[]
         else:
             i = i + 1
             continue
         recent = i
         imp = node.assign(ass[i], level, ass)
-        level = level + 1
         count = count + 1
         valid = True
 
@@ -227,11 +225,16 @@ def clauseLearningSolver(n, formula):
                         if len(ass) == n:
                             return ass, count, learned
                         i = i + 1
+                        level = level + 1
                         continue #skip backtrack
         #Case: backtracking
 #TODO: fix this to use ig and stuff
+        print "backtracking Instance:", ass
         printReadable(ig)
-        #learned.append()
+        conflictNode =  getLastDecided(ig)
+        clause = getUIP(conflictNode, ig, level)
+        print clause
+        learned.append(clause)
         recent = -1
         dellist = []
         for v in ass:
@@ -240,6 +243,7 @@ def clauseLearningSolver(n, formula):
                     dellist.append(v)
         for v in dellist:
             del ass[v]
+            ig[v].unAssign()
         valid = False
         formula = myCopy(tmp)
         if ass[i] == 0:
@@ -253,9 +257,35 @@ def clauseLearningSolver(n, formula):
                 return False, count, learned
     return False, count, learned
 
+def getUIP(n, graph, level):
+    clause = []
+    impl = []
+    for v in graph[n].impliedBy:
+        clause.append((graph[v].val,v))
+        if graph[v].level == level:
+            impl.append(v)
+    if len(impl) == 1:
+        #found UIP
+        return clause
+    else:
+        #need to traverse up implication levels until shared parent
+        i = 0
+        while len(shared) != 1:
+            for t in impl:
+                if graph[t].level == level:
+                    if t not in impl:
+                        impl.append(t)
+                    else:
+                        for v in graph[t].impliedBy:
+                            clause.append((graph[v].val,v))
+
+    return clause
+#TODO: this may need to search more in current level
+
+
 def printReadable(ig):
     for n in ig:
-        print "var:",n.var,"val:",n.val
+        print "var:",n.var,"val:",n.val, "level:", n.level
         print "\timplied by:", n.impliedBy
         print "\timplies:", n.implies
 
@@ -272,9 +302,16 @@ def updateAssociations(ass, ig, n):
             if count == 1:
                 for l in c:
                     if l[1] != node.var:
-                        node.impliedBy.append(l[1])
+                        if l[1] not in node.impliedBy:
+                            node.impliedBy.append(l[1])
                         if l[1] != n.var:
                             ig[l[1]].implies.append(node.var)
+
+def getLastDecided(ig):
+    n = ig[0]
+    ret = n.decided.pop()
+    n.decided.append(ret)
+    return ret
 
 ################################################################################
 # Conflict-directed backjumping with clause learning SAT Problem Solver                      
@@ -321,30 +358,29 @@ def checkCheck(f):
     print check(f, {4:1, 1:0});
 
 class Node:
-    #level
-    #var
-    #val 
-    #impliedBy = []
-    #implies = []
-    #clauses = []
+    decided = [] #stack keeps track of order in which variables were determined
     def __init__(self, var, formula):
         self.var = var
         self.impliedBy = []
         self.implies = []
         self.clauses = []
+        self.val = None
+        self.level = None
         for c in formula:
             for l in c:
                 if l[1] == var:
-                    self.clauses.append(c)
+                    self.clauses.append(tuple(c))
                     break
 
     def assign(self, val, level, ass):
+        if self.val == None:
+            self.decided.append(self.var)
         if self.var not in ass:
             print "oops I'm kind of an idiot"
         self.val = val
         self.level = level
         ret = False
-        for c in clauses:
+        for c in self.clauses:
             count = len(c)
             for l in c:
                 if l[1] in ass:
@@ -352,12 +388,17 @@ class Node:
                 else:
                     v = l
             if count == 1:
-                print "implication",v
                 #implication of v
-                self.implies.append(v)
+                self.implies.append(v[1])
                 ret = True
         return ret
 
+    def unAssign(self):
+        self.decided.pop()
+        self.val = None
+        self.level = None
+        self.impliedBy = []
+        self.implies = []
 
 if __name__ == "__main__":
     main()
