@@ -361,6 +361,7 @@ def backjumpSolver(n, formula):
                 del ass[i]
                 node.unAssign()
                 i = bval.pop()
+                continue
             else:
                 print "wiggity wiggity what?"
                 return False, ass
@@ -390,7 +391,7 @@ def backjumpSolver(n, formula):
         #Case: backtracking
         conflictNode =  getLastDecided(ig)
         clause = getUIP(conflictNode, ig, level)
-        formula.append(clause)
+        level = getBackJumpLevel(clause, level, ig)
         dellist = []
         for v in ass:
             if v not in bval:
@@ -401,6 +402,8 @@ def backjumpSolver(n, formula):
             ig[v].unAssign()
         valid = False
         formula = myCopy(tmp)
+        formula.append(clause)
+        tmp = myCopy(formula)
         if ass[i] == 0:
             continue #try the 1 branch of this variable
         elif ass[i] == 1:
@@ -411,6 +414,14 @@ def backjumpSolver(n, formula):
                 return False, count
     return False, count
 
+def getBackJumpLevel(clause, level, ig):
+    new = 0
+    for l in clause:
+        if ig[l[0]].level != level:
+            if ig[l[0]].level > new:
+                new = ig[l[0]].level
+    return new
+
 def main():
     f = [[(1,0),(0,2),(0,3)],[(0,1),(1,4)],[(0,0), (0,1), (0,2), (0,3), (0,4)]]
     h = [[(1,0)],[(0,1),(0,2)],[(0,1),(1,2)],[(1,1),(0,2)],[(1,1),(1,2)]]
@@ -419,15 +430,19 @@ def main():
     #checkCheck(f)
     #simple(f, 5)
     #simple(h, 3)
-    simple(g, 3)
+    #simple(g, 3)
     #unit(f,5)
     #unit(h,3)
     #unit(g,3)
     #unit(m,1)
-    claus(g,3)
-    claus([[(0,0)], [(1,0),(0,1)]],2)
-    claus([[(0,0),(0,1),(0,2)],[(1,0),(1,1)],[(1,1),(1,2)],[(1,2),(1,0)]],4)
-    claus([[(0,0),(0,1),(0,2)],[(0,0),(0,1),(1,2)]],3)
+    #claus(g,3)
+    #claus([[(0,0)], [(1,0),(0,1)]],2)
+    #claus([[(0,0),(0,1),(0,2)],[(1,0),(1,1)],[(1,1),(1,2)],[(1,2),(1,0)]],4)
+    #claus([[(0,0),(0,1),(0,2)],[(0,0),(0,1),(1,2)]],3)
+    jb(g,3)
+
+def jb(f, n):
+    print backjumpSolver(n, f)
 
 def claus(f, n):
     print clauseLearningSolver(n, f)
