@@ -220,11 +220,8 @@ def clauseLearningSolver(n, formula):
         elif ass[i] == 0 and not valid:
             ass[i] = 1
             level = node.level
-#TODO: may beed to update more on previously implied nodes
-            for k in node.impliedBy:
-                ig[k].implies.remove(node.var)
             node.impliedBy = []
-            node.implies =[]
+            node.implies = []
         else:
             i = i + 1
             continue
@@ -316,7 +313,8 @@ def updateAssociations(ass, ig, n):
             count = len(c)
             for l in c:
                 if l[1] in ass:
-                    count = count - 1
+                    if ass[l[1]] == l[0]:
+                        count = count - 1
             if count == 1:
                 for l in c:
                     if l[1] != node.var:
@@ -401,14 +399,17 @@ class Node:
         self.val = val
         self.level = level
         ret = False
+        v = -1
         for c in self.clauses:
             count = len(c)
             for l in c:
                 if l[1] in ass:
-                    count = count - 1
+                    if ass[l[1]] == l[0]:
+                        #assignment in this clause is 0 so it may imply
+                        count = count - 1
                 else:
                     v = l
-            if count == 1:
+            if count == 1 and v != -1:
                 #implication of v
                 self.implies.append(v[1])
                 ret = True
