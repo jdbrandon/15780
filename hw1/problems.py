@@ -130,7 +130,7 @@ def propSinglesUnit(formula, ass):
     return True
 
 #Returns false if assignment fails
-def propSingles(formula, ass, recent = -1, level =-1, ig = None):
+def propSingles(formula, ass, level =-1, ig = None):
     recurse = True
     while recurse:
         recurse = False
@@ -142,19 +142,18 @@ def propSingles(formula, ass, recent = -1, level =-1, ig = None):
                     if ig != None:
                         recurse = ig[var].assign(ass[var], level, ass)
                         updateAssociations(ass, ig, ig[var])
-                    recent = var
                     if not check(formula, ass):
-                        return False, recent
+                        return False
                     ret = propVal(var, ass[var], formula)
                     if not ret:
-                        return False, recent
+                        return False
                     if ret == -1:
                         recurse = True
                 elif bool(ass[var]) == bool(clause[0][0]):
                     #a singleton for which the current assigment
                     #will always produce a false clause
                     return False
-    return True, recent
+    return True
 
 #Returns false when a contradiction occurs
 def propVal(var, val, f):
@@ -201,7 +200,6 @@ def clauseLearningSolver(n, formula):
     ass = {}
     ig = []
     learned = []
-    recent = -1
     level = 0
     i = 0
     #Initialize nodes
@@ -225,7 +223,6 @@ def clauseLearningSolver(n, formula):
         else:
             i = i + 1
             continue
-        recent = i
         imp = node.assign(ass[i], level, ass)
         count = count + 1
         valid = True
@@ -238,7 +235,7 @@ def clauseLearningSolver(n, formula):
             if len(ass) == n:
                 return ass, count, learned
             if propVal(i, ass[i], formula):
-                ret, recent = propSingles(formula, ass, recent, level, ig)
+                ret = propSingles(formula, ass, level, ig)
                 if ret:
                     if check(formula, ass):
                         if len(ass) == n:
@@ -250,7 +247,6 @@ def clauseLearningSolver(n, formula):
         conflictNode =  getLastDecided(ig)
         clause = getUIP(conflictNode, ig, level)
         learned.append(clause)
-        recent = -1
         dellist = []
         for v in ass:
             if v not in bval:
@@ -267,7 +263,6 @@ def clauseLearningSolver(n, formula):
             #backtrack to previous branch val
             while ass[i] == 1 and len(bval) > 0:
                 i = bval.pop()
-            recent = i
             if len(bval) == 0:
                 return False, count, learned
     return False, count, learned
@@ -336,7 +331,85 @@ def getLastDecided(ig):
 #         A count of how many variable assignments where tried
 ################################################################################
 def backjumpSolver(n, formula):
-    return False, 0, []
+    count = 0
+    bval = []
+    ass = {}
+    ig = []
+    level = 0
+    i = 0
+    #Initialize nodes
+    for j in range(0,n):
+        ig.append(Node(j, formula))
+    if not propSingles(formula, ass, level=level, ig=ig):
+        return False, count
+    valid = True
+    tmp = myCopy(formula)
+    #Begin search algorithm
+    while i < n:
+        node = ig[i]
+        if i not in ass:
+            ass[i] = 0
+            bval.append(i)
+        elif ass[i] == 0 and not valid:
+            if level == node.level:
+                ass[i] = 1
+                level = node.level
+                node.impliedBy = []
+                node.implies = []
+            elif level < node.level:
+                #continue backjumping
+                del ass[i]
+                node.unAssign()
+                i = bval.pop()
+            else:
+                print "wiggity wiggity what?"
+                return False, ass
+        else:
+            i = i + 1
+            continue
+        imp = node.assign(ass[i], level, ass)
+        count = count + 1
+        valid = True
+
+        if imp:
+            #must be done before assigment made via propagation
+            updateAssociations(ass, ig, node)
+
+        if check(formula, ass):
+            if len(ass) == n:
+                return ass, count
+            if propVal(i, ass[i], formula):
+                ret = propSingles(formula, ass, level, ig)
+                if ret:
+                    if check(formula, ass):
+                        if len(ass) == n:
+                            return ass, count
+                        i = i + 1
+                        level = level + 1
+                        continue #skip backtrack
+        #Case: backtracking
+        conflictNode =  getLastDecided(ig)
+        clause = getUIP(conflictNode, ig, level)
+        formula.append(clause)
+        dellist = []
+        for v in ass:
+            if v not in bval:
+                if v != i:
+                    dellist.append(v)
+        for v in dellist:
+            del ass[v]
+            ig[v].unAssign()
+        valid = False
+        formula = myCopy(tmp)
+        if ass[i] == 0:
+            continue #try the 1 branch of this variable
+        elif ass[i] == 1:
+            #backtrack to previous branch val
+            while ass[i] == 1 and len(bval) > 0:
+                i = bval.pop()
+            if len(bval) == 0:
+                return False, count
+    return False, count
 
 def main():
     f = [[(1,0),(0,2),(0,3)],[(0,1),(1,4)],[(0,0), (0,1), (0,2), (0,3), (0,4)]]
