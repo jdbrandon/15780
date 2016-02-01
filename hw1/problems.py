@@ -208,7 +208,7 @@ def clauseLearningSolver(n, formula):
     for j in range(0,n):
         ig.append(Node(j, formula))
     if not propSingles(formula, ass, level=level, ig=ig):
-        return False, count, learned
+        return False, count
     valid = True
     tmp = myCopy(formula)
     #Begin search algorithm
@@ -247,7 +247,6 @@ def clauseLearningSolver(n, formula):
                         level = level + 1
                         continue #skip backtrack
         #Case: backtracking
-#TODO: fix this to use ig and stuff
         conflictNode =  getLastDecided(ig)
         clause = getUIP(conflictNode, ig, level)
         learned.append(clause)
