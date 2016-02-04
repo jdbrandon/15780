@@ -335,7 +335,7 @@ def backjumpSolver(n, formula):
     bval = []
     ass = {}
     ig = []
-    level = 0
+    level = -1
     i = 0
     #Initialize nodes
     for j in range(0,n):
@@ -345,6 +345,7 @@ def backjumpSolver(n, formula):
     valid = True
     tmp = myCopy(formula)
     #Begin search algorithm
+    level = level + 1
     while i < n:
         node = ig[i]
         if i not in ass:
@@ -394,9 +395,8 @@ def backjumpSolver(n, formula):
         level = getBackJumpLevel(clause, level, ig)
         dellist = []
         for v in ass:
-            if v not in bval:
-                if v != i:
-                    dellist.append(v)
+            if ig[v].level >= level:
+                dellist.append(v)
         for v in dellist:
             del ass[v]
             ig[v].unAssign()
@@ -404,6 +404,14 @@ def backjumpSolver(n, formula):
         formula = myCopy(tmp)
         formula.append(clause)
         tmp = myCopy(formula)
+        if len(ass) == 0:
+            propSingles(formula, ass, -1, ig)
+            if len(ass) == 0:
+                return False, count
+            i = 0
+            valid = True
+            level = 0
+            continue
         if ass[i] == 0:
             continue #try the 1 branch of this variable
         elif ass[i] == 1:
