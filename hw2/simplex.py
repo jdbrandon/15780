@@ -37,7 +37,39 @@ import numpy as np
 # reference.
 ##########################################################
 def simplex(I, c, A, b):
+    print I, c, A, b
+    search = True
+    while search:
+        AI = np.linalg.inv(A[:,I])
+        minV = 0
+        cjbar = -1
+        for j in range(0,len(c)):
+            if j not in I:
+                txi = AI.dot(b)
+                print "xi",txi
+                t = c[j] - c[I].dot(AI[:,j])
+                print t
+                if t < minV:
+                    xI = txi
+                    minV = t
+                    cjbar = j
+        if cjbar == -1:
+            x = np.zeros(c.shape[0])
+            x[I] = AI.dot(b)
+            return c[I].dot(xI), x
+        print minV, cjbar
+        dI = -(AI.dot(A[:,cjbar]))
+        print dI
+        xd = -xI/dI
+        minV = xd[0]
+        minI = 0
+        for i in range(1, len(xd)):
+            if xd[i] < minV:
+                minV = xd[i]
+                minI = i
 
+        I[minI] = cjbar
+    return False
 
 ##########################################################
 # Implement a simplex algorithm with incremental
@@ -50,12 +82,13 @@ def simplex(I, c, A, b):
 # for most instances.
 ##########################################################
 def revised_simplex(I, c, A, b):
-
+    return False
 
 ##########################################################
 # Implement the dual simplex algorithm.
 ##########################################################
 def dual_simplex(I, c, A, b):
+    return False
 
 ##########################################################
 # Implement a method that add the new constraint g.T.dot(x) <= h
@@ -83,3 +116,8 @@ def dual_simplex(I, c, A, b):
 # return them with the statement: return (v, x)
 ##########################################################
 def add_constraint(I,c,A,b,g,h):
+    return False
+
+
+simplex(np.array([2,3]),
+np.array([-2,-1,0,0]),np.array([np.array([1,2,1,0]),np.array([3,1,0,1])]), np.array([6,9]))
