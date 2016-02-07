@@ -84,7 +84,7 @@ def simplex(I, c, A, b):
         i = 0
         inserted = False
         while i<len(I):
-            if cjbar < I[i]:
+            if k < I[i]:
                 I = np.insert(I, i, k)
                 inserted = True
                 break

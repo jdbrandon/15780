@@ -2,3 +2,6 @@ test_cases
 numpy_examples.py
 test.py
 ._*
+*.pyc
+out
+*.swp
