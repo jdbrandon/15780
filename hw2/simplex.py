@@ -37,60 +37,42 @@ import numpy as np
 # reference.
 ##########################################################
 def simplex(I, c, A, b):
-    print I, c, A, b
     search = True
     while search:
-        print I
         AI = np.linalg.inv(A[:,I])
         cjbar = -1
         x = np.zeros(c.shape[0])
         x[I] = AI.dot(b)
-        print "xi", x[I]
         k = -1
         for j in range(0,len(c)):
             if j not in I:
                 t = c[j] - c[I].dot(AI.dot(A[:,j]))
                 if t < 0:
-                    print "t", t
                     cjbar = t
                     k = j
                     break
         if k == -1:
             return c[I].dot(x[I]), x
         d = np.zeros(len(c))
-        d[I] = -(AI.dot(A[:,k]))
-        print "di", d[I]
+        d[I] = -AI.dot(A[:,k])
         if not checkdI(d[I]):
             #all elements of dI are positive, solution is unbounded
             return "infinity"
 
         xd = -x[I]/d[I]
-        print "xd", xd
         minV = None
         minI = -1
         j = 0
-#check this out for weirdness
         for i in I:
-            if minV == None:
-                minV = xd[j]
-                minI = j
-            elif xd[j] < minV:
-                minV = xd[j]
-                minI = j
+            if d[i] < 0:
+                if minV == None:
+                    minV = xd[j]
+                    minI = j
+                elif xd[j] < minV:
+                    minV = xd[j]
+                    minI = j
             j = j + 1
-        print "min", minV, minI, I[minI]
-        #I[minI] = cjbar
-        I = np.delete(I, minI)
-        i = 0
-        inserted = False
-        while i<len(I):
-            if k < I[i]:
-                I = np.insert(I, i, k)
-                inserted = True
-                break
-            i = i + 1
-        if not inserted:
-            I = np.append(I, k)
+        I[minI] = k
     return False
 
 #returns true if there exists a negative value in the elements of dI
@@ -113,6 +95,50 @@ def checkdI(d):
 # for most instances.
 ##########################################################
 def revised_simplex(I, c, A, b):
+    search = True
+    AI = np.linalg.inv(A[:,I])
+    while search:
+        cjbar = -1
+        x = np.zeros(c.shape[0])
+        x[I] = AI.dot(b)
+        k = -1
+        for j in range(0,len(c)):
+            if j not in I:
+                t = c[j] - c[I].dot(AI.dot(A[:,j]))
+                if t < 0:
+                    cjbar = t
+                    k = j
+                    break
+        if k == -1:
+            return c[I].dot(x[I]), x
+        d = np.zeros(len(c))
+        d[I] = -AI.dot(A[:,k])
+        if not checkdI(d[I]):
+            #all elements of dI are positive, solution is unbounded
+            return "infinity"
+        xd = -x[I]/d[I]
+        minV = None
+        minI = -1
+        j = 0
+        for i in I:
+            if d[i] < 0:
+                if minV == None:
+                    minV = xd[j]
+                    minI = j
+                elif xd[j] < minV:
+                    minV = xd[j]
+                    minI = j
+            j = j + 1
+        m = I[minI]
+        I[minI] = k
+        #update AI
+        v = np.zeros(len(AI))
+        v[minI] = 1
+        u = A[:,k] - A[:,m]
+       # top = AI.dot(np.outer(u,v)).dot(AI)
+       # bot = 1 + (v.dot(AI).dot(u))
+       # AI = AI - (top/bot)
+        AI = AI - ((AI.dot(np.outer(u,v)).dot(AI))/(1+(v.dot(AI).dot(u))))
     return False
 
 ##########################################################
@@ -152,3 +178,5 @@ def add_constraint(I,c,A,b,g,h):
 
 #print simplex(np.array([2,3]),
 #np.array([-2,-1,0,0]),np.array([np.array([1,2,1,0]),np.array([3,1,0,1])]), np.array([6,9]))
+print revised_simplex(np.array([2,3]),
+np.array([-2,-1,0,0]),np.array([np.array([1,2,1,0]),np.array([3,1,0,1])]), np.array([6,9]))
