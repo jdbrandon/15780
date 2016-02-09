@@ -82,15 +82,14 @@ def simplex(I, c, A, b):
 def revised_simplex(I, c, A, b):
     search = True
     AI = np.linalg.inv(A[:,I])
-    mag = len(AI)
     while search:
         x = np.zeros(c.shape[0])
         x[I] = AI.dot(b)
         k = -1
         cIAI = c[I].dot(AI)
-        for j in range(0,len(c)):
+        for j, v in enumerate(c):
             if j not in I:
-                t = c[j] - cIAI.dot(A[:,j])
+                t = v - cIAI.dot(A[:,j])
                 if t < 0:
                     k = j
                     break
@@ -100,18 +99,16 @@ def revised_simplex(I, c, A, b):
         xd = -x[I]/dI
         minV = None
         minI = -1
-        j = 0
-        for i in range(0,len(I)):
+        for i in range(len(I)):
             if dI[i] < 0:
-                if minV == None or xd[j] < minV:
-                    minV = xd[j]
-                    minI = j
-            j = j + 1
+                if minV == None or xd[i] < minV:
+                    minV = xd[i]
+                    minI = i
         if minV == None:
             return -float("inf"), np.zeros(c.shape[0])
         m = I[minI]
         I[minI] = k
-        AI = updateAI(AI, mag, A[:,k] - A[:,m], minI)
+        AI = updateAI(AI, A[:,k] - A[:,m], minI)
     return False
 
 ##########################################################
@@ -121,7 +118,6 @@ def dual_simplex(I, c, A, b):
     search = True
     AI = np.linalg.inv(A[:,I])
     AT = np.transpose(A)
-    mag = len(AI)
     while search:
         x = np.zeros(c.shape[0])
         x[I] = AI.dot(b)
@@ -145,9 +141,9 @@ def dual_simplex(I, c, A, b):
         cIAI = c[I].dot(AI)
         minV = None
         k = -1
-        for j in range(0,len(c)):
+        for j, f in enumerate(c):
             if j not in I:
-                t = c[j] - cIAI.dot(A[:,j])
+                t = f - cIAI.dot(A[:,j])
                 if v[j] < 0:
                     t = -(t/v[j])
                     if minV == None or t < minV:
@@ -159,13 +155,11 @@ def dual_simplex(I, c, A, b):
 
         m = I[minI]
         I[minI] = k
-        AI = updateAI(AI, mag, A[:,k] - A[:,m], minI)
+        AI = updateAI(AI, A[:,k] - A[:,m], minI)
     return False
 
-def updateAI(AI, mag, u, minI):
-    v = np.zeros(mag)
-    v[minI] = 1
-    return AI-np.outer(AI.dot(u), v.dot(AI))/(1+AI[minI].dot(u))
+def updateAI(AI, u, minI):
+    return AI-np.outer(AI.dot(u), AI[minI])/(1+AI[minI].dot(u))
 ##########################################################
 # Implement a method that add the new constraint g.T.dot(x) <= h
 # to the existing system of equations
