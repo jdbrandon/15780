@@ -39,9 +39,9 @@ import numpy as np
 def simplex(I, c, A, b):
     search = True
     while search:
+        x = np.zeros(c.shape[0])
         AI = np.linalg.inv(A[:,I])
         cjbar = -1
-        x = np.zeros(c.shape[0])
         x[I] = AI.dot(b)
         k = -1
         for j in range(0,len(c)):
@@ -53,14 +53,13 @@ def simplex(I, c, A, b):
                     break
         if k == -1:
             return c[I].dot(x[I]), x
-        d = np.zeros(len(c))
-        d[I] = -AI.dot(A[:,k])
-        xd = -x[I]/d[I]
+        dI = -AI.dot(A[:,k])
+        xd = -x[I]/dI
         minV = None
         minI = -1
         j = 0
-        for i in I:
-            if d[i] < 0:
+        for i in range(0,len(I)):
+            if dI[i] < 0:
                 if minV == None or xd[j] < minV:
                     minV = xd[j]
                     minI = j
@@ -97,14 +96,13 @@ def revised_simplex(I, c, A, b):
                     break
         if k == -1:
             return c[I].dot(x[I]), x
-        d = np.zeros(len(c))
-        d[I] = -AI.dot(A[:,k])
-        xd = -x[I]/d[I]
+        dI = -AI.dot(A[:,k])
+        xd = -x[I]/dI
         minV = None
         minI = -1
         j = 0
-        for i in I:
-            if d[i] < 0:
+        for i in range(0,len(I)):
+            if dI[i] < 0:
                 if minV == None or xd[j] < minV:
                     minV = xd[j]
                     minI = j
