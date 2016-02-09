@@ -167,7 +167,7 @@ def dual_simplex(I, c, A, b):
 def updateAI(AI, mag, u, minI):
     v = np.zeros(mag)
     v[minI] = 1
-    return AI-AI.dot(np.outer(u,v)).dot(AI)/(1+AI[minI].dot(u))
+    return AI-np.outer(AI.dot(u), v.dot(AI))/(1+AI[minI].dot(u))
 ##########################################################
 # Implement a method that add the new constraint g.T.dot(x) <= h
 # to the existing system of equations
