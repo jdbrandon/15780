@@ -61,10 +61,7 @@ def simplex(I, c, A, b):
         j = 0
         for i in I:
             if d[i] < 0:
-                if minV == None:
-                    minV = xd[j]
-                    minI = j
-                elif xd[j] < minV:
+                if minV == None or xd[j] < minV:
                     minV = xd[j]
                     minI = j
             j = j + 1
@@ -108,10 +105,7 @@ def revised_simplex(I, c, A, b):
         j = 0
         for i in I:
             if d[i] < 0:
-                if minV == None:
-                    minV = xd[j]
-                    minI = j
-                elif xd[j] < minV:
+                if minV == None or xd[j] < minV:
                     minV = xd[j]
                     minI = j
             j = j + 1
@@ -119,19 +113,61 @@ def revised_simplex(I, c, A, b):
             return -float("inf"), np.zeros(c.shape[0])
         m = I[minI]
         I[minI] = k
-        #update AI
-        v = np.zeros(mag)
-        v[minI] = 1
-        u = A[:,k] - A[:,m]
-        AI = AI-AI.dot(np.outer(u,v)).dot(AI)/(1+AI[minI].dot(u))
+        AI = updateAI(AI, mag, A[:,k] - A[:,m], minI)
     return False
 
 ##########################################################
 # Implement the dual simplex algorithm.
 ##########################################################
 def dual_simplex(I, c, A, b):
+    search = True
+    AI = np.linalg.inv(A[:,I])
+    AT = np.transpose(A)
+    mag = len(AI)
+    while search:
+        x = np.zeros(c.shape[0])
+        x[I] = AI.dot(b)
+        minV = None
+        for val in range(0, len(x)):
+            if val in I:
+                if x[val] <= 0:
+                    if minV == None or x[val] < minV:
+                        minV = x[val]
+        k = -1
+        for i in range(0,len(I)):
+            if x[I[i]] == minV:
+                k = i
+                break
+        if k == -1:
+            return c[I].dot(x[I]), x
+        #k is index of index in I
+        v = AT.dot(np.transpose(AI)[:,k])
+        minI = k
+
+        cIAI = c[I].dot(AI)
+        minV = None
+        k = -1
+        for j in range(0,len(c)):
+            if j not in I:
+                t = c[j] - cIAI.dot(A[:,j])
+                if v[j] < 0:
+                    t = -(t/v[j])
+                    if minV == None or t < minV:
+                        minV = t
+                        k = j
+
+        if minV == None:
+            return float("inf"), np.zeros(c.shape[0])
+
+        m = I[minI]
+        I[minI] = k
+        AI = updateAI(AI, mag, A[:,k] - A[:,m], minI)
     return False
 
+def updateAI(AI, mag, u, minI):
+    v = np.zeros(mag)
+    v[minI] = 1
+    return AI-AI.dot(np.outer(u,v)).dot(AI)/(1+AI[minI].dot(u))
 ##########################################################
 # Implement a method that add the new constraint g.T.dot(x) <= h
 # to the existing system of equations
@@ -158,8 +194,17 @@ def dual_simplex(I, c, A, b):
 # return them with the statement: return (v, x)
 ##########################################################
 def add_constraint(I,c,A,b,g,h):
-    return False
-
+    v = []
+    for i in range(0, len(A)):
+        v.append([0])
+    A = np.append(A, v, 1)
+    g = np.append(g, [1], 0)
+    A = np.append(A, [g], 0)
+    b = np.append(b, h)
+    I = np.append(I, len(A[0])-1)
+    c = np.append(c, 0)
+    x, y = dual_simplex(I,c,A,b)
+    return x, y
 
 #print simplex(np.array([2,3]),
 #np.array([-2,-1,0,0]),np.array([np.array([1,2,1,0]),np.array([3,1,0,1])]), np.array([6,9]))
