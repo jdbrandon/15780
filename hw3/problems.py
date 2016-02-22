@@ -34,7 +34,7 @@ def get_next_bid(auction, bid_list, data):
     items = []
     numItems = auction[0]
     if len(bid_list) == 0:
-        return 0, auction[1][0], data
+        return 0, (data[0],data[1],data[2],data[3],data[4]-auction[1][0][1],data[5]), data
 
     maxBid = 0
     for bid in bid_list:
@@ -52,8 +52,8 @@ def get_next_bid(auction, bid_list, data):
         if overlap:
             b = b + 1
             continue
-        return b, auction[1][b], data
-    return None
+        return b, (data[0],data[1],data[2],data[3],data[4]-auction[1][b][1],data[5]), data
+    return None, None, None
 
 
 def accountItems(items, bid):
@@ -91,7 +91,7 @@ def auction_heuristic(auction, bid_list, data):
     sum_bids = 0
     I = []
     c = []
-    A = [][]
+    A = []
     b = []
     if not bid_list:
         #construct LP
@@ -111,14 +111,31 @@ def auction_heuristic(auction, bid_list, data):
                 b.append(1)
                 I.append(slackVars+i)
 
-        val, soln = revized_simplex(I, c, A, b)
+        val, soln, I = simplex_reference(I, c, A, b)
         data = (I, c, A, b, val, soln)
     else:
         #complete DUAL LP using data
+        I, c, A, b, val, soln = data
+        branchBid = bid_list[len(bid_list)-1]
+        if branchBid[1]:
+            g = -branchBid[0]
+            h = -1
+        else:
+            g = branchBid[0]
+            h = 0
 
-    for bid, p in auction[1]:
-        sum_bids += p
-    next_h = 0 if get_next_bid(auction, bid_list, data) is None else sum_bids
+        A, b, c, ret = add_constraint_reference(I, c, A, b, g, h)
+        val, soln, I = ret
+
+        for bid, taken in bid_list:
+            if taken:
+                val -= auction[1][bid][1]
+
+    r = get_next_bid(auction, bid_list, data)
+    data = (I,c,A,b,val,soln)
+    if not r:
+        return 0, data
+    next_h = data[4]
     return (next_h, data)
 
 
@@ -176,11 +193,11 @@ def get_next_bid_better(auction, bid_list, data):
 
 if __name__ == '__main__':
     a = (3, [([1,2], 2), ([2,3], 3), ([3], 2), ([1,3], 1)])
-    print get_next_bid(a, [], [])
-    print get_next_bid(a, [(0, True)], [])
-    print get_next_bid(a, [(0, False)], [])
-    print get_next_bid(a, [(0, False), (1, True)], [])
-    print get_next_bid(a, [(0, False), (1, False)], [])
+    #print get_next_bid(a, [], [])
+    #print get_next_bid(a, [(0, True)], [])
+    #print get_next_bid(a, [(0, False)], [])
+    #print get_next_bid(a, [(0, False), (1, True)], [])
+    #print get_next_bid(a, [(0, False), (1, False)], [])
 
 ##########################################################
 # INPUT description:
@@ -276,7 +293,7 @@ def revised_simplex(I, c, A, b):
                     k = j
                     break
         if k == -1:
-            return c[I].dot(x[I]), x
+            return c[I].dot(x[I]), x, I
         dI = -AI.dot(A[:,k])
         xd = -x[I]/dI
         minV = None
@@ -287,11 +304,11 @@ def revised_simplex(I, c, A, b):
                     minV = xd[i]
                     minI = i
         if minV == None:
-            return -float("inf"), np.zeros(c.shape[0])
+            return -float("inf"), np.zeros(c.shape[0]), I
         m = I[minI]
         I[minI] = k
         AI = updateAI(AI, A[:,k] - A[:,m], minI)
-    return False
+    return False, None, None
 
 ##########################################################
 # Implement the dual simplex algorithm.
@@ -381,3 +398,169 @@ def add_constraint(I,c,A,b,g,h):
     x, y = dual_simplex(I,c,A,b)
     return x, y
 
+# =============================================================================
+# Below are the reference simplex solvers
+# =============================================================================
+
+##########################################################
+# INPUT description:
+# Your algorithm receives 4 inputs:
+# I <- an initial feasible basis
+# c <- a numpy array that you will use as your objective function
+# A,b <- a matrix and vector describing the constraint
+#
+#      A.dot(x) = b
+#
+# OUTPUT description:
+# You algorithms should return two things:
+# 1. the value of the optimal solution v.
+#     - Assuming an optimal solution x, get this with c.dot(x).
+#     - Alternatively, you can use c[I].dot(xI), where xI
+#       is the vector obtained from the optimal basis.
+# 2. an optimal solution x
+#     - This should be in the form of a numpy array.
+#     - Assuming an optimal basis I and associated
+#       inverse of A restricted to index set I, called AI,
+#       you can construct it with:
+#
+#       x = np.zeros(c.shape[0])
+#       x[I] = AI.dot(b)
+# 3. the optimal index set
+# return them with the statement: return (v, x, I)
+##########################################################
+
+##########################################################
+# Implement any simplex algorithm here.
+# You are free to write a dual and/or revised simplex
+# implementation and call it here. It may be easier to
+# write up the simpler standard simplex algorithm first,
+# since you can reuse a lot of its code for the revised
+# simplex algorithm anyway. It will also be useful as a
+# reference.
+##########################################################
+def simplex_reference(I, c, A, b):
+    while True:
+        AI = np.linalg.inv(A[:,I])
+        xI = AI.dot(b)
+        cbar = c - A.T.dot(AI.T.dot(c[I]))
+        j_neg = np.where(cbar < -1e-12)[0]
+        if len(j_neg) == 0:
+            x = np.zeros(c.shape[0])
+            x[I] = xI
+            return (c[I].dot(xI), x, I) # optimal, and return the index set
+        dI = -AI.dot(A[:,j_neg[0]])
+        if np.all(dI > 1e-12):
+            return (-float("inf"), np.zeros(shape[0]))
+        #print 'I,xI,dI,k'
+        #print I
+        #print xI, dI
+        # find all entries that are zero-ish
+        # treat them as very small negative steps i.e. alpha will be large
+        dI[(dI >= -1e-12) & (dI <= 1e-12)] = -1e-12
+        # xI should be all zero or positive, so randomly add some positive noise
+        # so that argmin will randomly choose an index in case of ties
+        k = np.argmin(-(xI + 1e-8*np.random.rand(xI.shape[0]))/dI + 1e10*(dI >= -1e-12))
+        #print I[k], j_neg[0]
+        I[k] = j_neg[0]
+
+
+def basis_vector_reference(n, i):
+    v = np.zeros(n)
+    v[i] = 1.0
+    return v
+
+def sherman_morrison_reference(AI, index_out, col_in, col_out):
+    basis_vec = basis_vector_reference(AI.shape[0], index_out)
+    num_left = AI.dot(col_in) - AI.dot(col_out)
+    num_right = basis_vec.T.dot(AI)
+    #print "num_right", num_right
+    num = np.outer(num_left, num_right)
+
+    denom = 1 + basis_vec.T.dot(AI).dot(np.subtract(col_in, col_out))
+
+    return AI - np.divide(num, denom)
+
+##########################################################
+# Implement a simplex algorithm with incremental
+# A inverse computation here.
+# You are free to write a dual simplex with incremental
+# matrix inversion and call it here.
+# In addition to output correctness, this algorithm
+# will also be tested for speed. In our reference
+# implementation, the speedup was a factor of 10-20
+# for most instances.
+##########################################################
+def revised_simplex_reference(I, c, A, b):
+    AI = np.linalg.inv(A[:,I])
+    while True:
+        #AI = np.linalg.inv(A[:,I])
+        xI = AI.dot(b)
+        cbar = c - A.T.dot(AI.T.dot(c[I]))
+        j_neg = np.where(cbar < -1e-12)[0]
+        if len(j_neg) == 0:
+            x = np.zeros(c.shape[0])
+            x[I] = xI
+            return (c[I].dot(xI), x) # optimal
+        dI = -AI.dot(A[:,j_neg[0]])
+        if np.all(dI > 1e-12):
+            return (-float("inf"), np.zeros(shape[0]))
+        k = np.argmin(-xI/dI + 1e10*(dI > -1e-12))
+        #print "In: ", j_neg[0], "Out: ", I[k]
+        AI = sherman_morrison_reference(AI, k, A[:,j_neg[0]], A[:,I[k]])
+        I[k] = j_neg[0]
+
+
+##########################################################
+# Implement the dual simplex algorithm.
+# This algorithm requires additional output.
+#
+# OUTPUT description:
+# You algorithms should return three things:
+# 1. the value of the optimal solution v.
+#     - Assuming an optimal solution x, get this with c.dot(x).
+#     - Alternatively, you can use c[I].dot(xI), where xI
+#       is the vector obtained from the optimal basis.
+# 2. an optimal solution x
+#     - This should be in the form of a numpy array.
+#     - Assuming an optimal basis I and associated
+#       inverse of A called AI, you can construct
+#       it with:
+#       x = np.zeros(c.shape[0])
+#       x[I] = AI.dot(b)
+# 3. the index set I for the optimal solution.
+#
+# return them with the statement: return (v, x, I)
+##########################################################
+def dual_simplex_reference(I, c, A, b):
+    while True:
+        #print 'I'
+        #print I
+        AI = np.linalg.inv(A[:,I])
+        xI = AI.dot(b)
+        cbar = c - A.T.dot(AI.T.dot(c[I]))
+        i_neg = np.where(xI < -1e-12)[0]
+        if len(i_neg) == 0:
+            x = np.zeros(c.shape[0])
+            x[I] = xI
+            return (c[I].dot(xI), x, I) # optimal
+        v = A.T.dot(AI.T[:,i_neg[0]])
+        if np.all(v > 1e-12):
+            return (-float("inf"), np.zeros(shape[0]))
+        #print 'cbar, v'
+        #print cbar,v
+        # if v is positive, then we don't want to pick it
+        # if v is zero, then we may want to pick it, so make it very small negative
+        v[(v >= -1e-12) & (v <= 1e-12)] = -1e-12
+        k = np.argmin(-(cbar+ 1e-8*np.random.rand(cbar.shape[0]))/(v) + 1e10*(v >= -1e-12))
+        #print 'k, I[i_net[0]]'
+        #print k, I[i_neg[0]]
+        I[i_neg[0]] = k
+# return the updated system as well as the solution
+def add_constraint_reference(I,c,A,b,g,h):
+    A = np.vstack([A, g])
+    basis_vec = basis_vector_reference(b.shape[0]+1, b.shape[0])
+    A = np.column_stack([A, basis_vec])
+    b = np.append(b, h)
+    I = np.append(I, [c.shape[0]])
+    c = np.append(c, [0])
+    return (A,b,c,dual_simplex_reference(I, c, A, b))
