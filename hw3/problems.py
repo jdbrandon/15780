@@ -112,7 +112,6 @@ def auction_heuristic(auction, bid_list, data):
                 I.append(slackVars+i)
 
         val, soln, I = simplex_reference(I, c, A, b)
-        data = (I, c, A, b, val, soln)
     else:
         #complete DUAL LP using data
         I, c, A, b, val, soln = data
