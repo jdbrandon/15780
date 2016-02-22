@@ -34,7 +34,7 @@ def get_next_bid(auction, bid_list, data):
     items = []
     numItems = auction[0]
     if len(bid_list) == 0:
-        return 0, (data[0],data[1],data[2],data[3],data[4]-auction[1][0][1],data[5]), data
+        return 0, data, data
 
     maxBid = 0
     for bid in bid_list:
@@ -52,8 +52,8 @@ def get_next_bid(auction, bid_list, data):
         if overlap:
             b = b + 1
             continue
-        return b, (data[0],data[1],data[2],data[3],data[4]-auction[1][b][1],data[5]), data
-    return None, None, None
+        return b, data, data
+    return None
 
 
 def accountItems(items, bid):
