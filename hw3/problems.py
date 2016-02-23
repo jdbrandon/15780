@@ -102,25 +102,31 @@ def auction_heuristic(auction, bid_list, data):
             constraint = []
             for i, bid in enumerate(auction[1]):
                 if x in bid[0]:
-                    constraint.append(i)
+                    constraint.append(1)
+                else:
+                    constraint.append(0)
             A.append(constraint)
         slackVars = len(A)
         for idx, constraint in enumerate(A):
             for i in range(0, slackVars):
-                constraint.append(1 if idx == i else 0)
-                b.append(1)
-                I.append(slackVars+i)
+                constraint.append(1 if idx== i else 0)
+            b.append(1)
+        for i in range(0, slackVars):
+            I.append(slackVars+i-1)
+            c.append(0)
 
-        val, soln, I = simplex_reference(I, c, A, b)
+        val, soln, I = simplex_reference(np.array(I), np.array(c), np.array(A), np.array(b))
     else:
         #complete DUAL LP using data
         I, c, A, b, val, soln = data
         branchBid = bid_list[len(bid_list)-1]
         if branchBid[1]:
-            g = -branchBid[0]
+            g = np.zeros(len(A[0]))
+            g[branchBid[0]] = -1
             h = -1
         else:
-            g = branchBid[0]
+            g = np.zeros(len(A[0]))
+            g[branchBid[0]] = 1
             h = 0
 
         A, b, c, ret = add_constraint_reference(I, c, A, b, g, h)
@@ -131,7 +137,7 @@ def auction_heuristic(auction, bid_list, data):
                 val -= auction[1][bid][1]
 
     r = get_next_bid(auction, bid_list, data)
-    data = (I,c,A,b,val,soln)
+    data = (np.array(I),np.array(c),np.array(A),np.array(b),val,soln)
     if not r:
         return 0, data
     next_h = data[4]
