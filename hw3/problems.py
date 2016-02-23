@@ -2,6 +2,7 @@
 This file is where you put your solutions.
 '''
 import numpy as np
+import copy as cp
 
 '''
 This function computes which next bid should be considered in the search, given the current search path.
@@ -32,19 +33,24 @@ When testing, the autograder will be using its own version of auction_heuristic(
 '''
 def get_next_bid(auction, bid_list, data):
     items = []
+    _,_,A,_,_,_ = data
+    g1 = np.zeros(len(A[0]))
+    g2 = np.zeros(len(A[0]))
     numItems = auction[0]
-    if len(bid_list) == 0:
-        return 0, data, data
+    if not bid_list:
+        g1[0] = -1
+        g2[0] = 1
+        return 0, cp.deepcopy(data + (g1,-1)), cp.deepcopy(data + (g2, 0))
 
     maxBid = 0
     for bid in bid_list:
         if bid[1]:
             accountItems(items, auction[1][bid[0]])
-        maxBid = bid[1]
+        maxBid = bid[0]
 
     b = maxBid + 1
-    overlap = False
     while b < (len(auction[1])):
+        overlap = False
         nextBid = auction[1][b]
         for item in nextBid[0]:
             if item in items:
@@ -52,7 +58,9 @@ def get_next_bid(auction, bid_list, data):
         if overlap:
             b = b + 1
             continue
-        return b, data, data
+        g1[b] = -1
+        g2[b] = 1
+        return b, cp.deepcopy(data + (g1,-1)), cp.deepcopy(data + (g2, 0))
     return None
 
 
@@ -96,7 +104,7 @@ def auction_heuristic(auction, bid_list, data):
     if not bid_list:
         #construct LP
         for bid, p in auction[1]:
-            c.append(p)
+            c.append(-p)
 
         for x in range(0, auction[0]):
             constraint = []
@@ -115,33 +123,40 @@ def auction_heuristic(auction, bid_list, data):
             I.append(slackVars+i-1)
             c.append(0)
 
+        #print "I",I
+        #print "c",c
+        #print "A",np.array(A)
+        #print "b",b
+
         val, soln, I = simplex_reference(np.array(I), np.array(c), np.array(A), np.array(b))
+        newdata = (np.array(I),np.array(c),np.array(A),np.array(b),-val,soln)
     else:
         #complete DUAL LP using data
-        I, c, A, b, val, soln = data
+        I, c, A, b, val, soln, g, h = cp.deepcopy(data)
         branchBid = bid_list[len(bid_list)-1]
-        if branchBid[1]:
-            g = np.zeros(len(A[0]))
-            g[branchBid[0]] = -1
-            h = -1
-        else:
-            g = np.zeros(len(A[0]))
-            g[branchBid[0]] = 1
-            h = 0
 
-        A, b, c, ret = add_constraint_reference(I, c, A, b, g, h)
-        val, soln, I = ret
+        #print "I",I
+        #print "c",c
+        #print "A",A
+        #print "b",b
+        #print "g",g
+        #print "h",h
 
+        nA, nb, nc, ret = add_constraint_reference(I, c, A, b, g, h)
+        nval, nsoln, nI = ret
+        nval = -nval
         for bid, taken in bid_list:
             if taken:
-                val -= auction[1][bid][1]
+                nval -= auction[1][bid][1]
 
-    r = get_next_bid(auction, bid_list, data)
-    data = (np.array(I),np.array(c),np.array(A),np.array(b),val,soln)
+        newdata = (np.array(nI),np.array(nc),np.array(nA),np.array(nb),nval,nsoln)
+    r = get_next_bid(auction, bid_list, newdata)
     if not r:
-        return 0, data
-    next_h = data[4]
-    return (next_h, data)
+        if nval < 1e-14 and nval > -1e-14:
+            return 0, newdata
+        return nval, newdata
+    next_h = newdata[4]
+    return (next_h, newdata)
 
 
 '''
