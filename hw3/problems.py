@@ -192,58 +192,40 @@ in the constraints. Make sure not to modify the inputs.
 def gomory_cut(I, A, b, m):
     Ai = cp.deepcopy(A[:,I])
     AiInv = np.linalg.inv(Ai)
-    print AiInv
-    print AiInv.dot(b)
 
     minv = m
     mink = -1
-    mina0 = -1
+    minxi = -1
     for k, i in enumerate(I):
         if i < m:
-            a0 = AiInv.dot(b)[k]
-            xi = a0
-            for j in range(0, len(A[0])):
-                xi += AiInv.dot(A)[k][j]
+            xi = AiInv.dot(b)[k]
             f = xi - np.floor(xi)
             if f != 0:
                 if minv > i:
-                    mina0 = a0
+                    minxi = xi
                     minv = i
                     mink = k
     if minv == m:
         return None
-    i = minv
     k = mink
     fi = []
-    j1l = []
-    j1g = []
-    c = mina0 - np.floor(mina0)
-    fi.append(c)
+    c = minxi - np.floor(minxi)
+    AiInvA = AiInv.dot(A)
     for j in range(0, len(A[0])):
-        aij = AiInv.dot(A)[k][j]
+        aij = AiInvA[k][j]
         delta = np.floor(aij)
         fij = aij-delta
-        fi.append(fij)
-        if fij <= c:
-            j1l.append((aij, delta, fij))
-        else:
-            j1g.append((aij, delta, fij))
+        fi.append((fij, fij<=c))
 
-    xi = 0
-    #xi += np.floor(mina0)
-    #xi += c
-    for aij, delta, fij in j1l:
-        print xi, fij, delta
-        xi += fij
     coef = c/(1-c)
-    for aij, delta, fij in j1g:
-        print xi, fij, delta
-        xi += fij - 1
-    #    xi += coef * (1 - fij)
-    print xi
-
-
-
+    vec = []
+    for f in fi:
+        if f[1]:
+            xi = f[0]
+        else:
+            xi = coef * (1 - f[0])
+        vec.append(xi)
+    return (np.array(vec), c)
 
 '''
 This function computes which next bid should be considered in the search, given the current searth path.
