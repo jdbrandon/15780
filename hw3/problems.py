@@ -32,15 +32,19 @@ We give this default implementation purely to show you how the autograder deals 
 When testing, the autograder will be using its own version of auction_heuristic(...) so you are free to change your auction_heuristic(...) and it won't interfere with grading this question.
 '''
 def get_next_bid(auction, bid_list, data):
-    items = []
-    _,_,A,_,_,_ = data
-    g1 = np.zeros(len(A[0]))
-    g2 = np.zeros(len(A[0]))
+    items = []  
+    if data:
+        _,_,A,_,_,_ = data
+        g1 = np.zeros(len(A[0]))
+        g2 = np.zeros(len(A[0]))
     numItems = auction[0]
     if not bid_list:
-        g1[0] = -1
-        g2[0] = 1
-        return 0, cp.deepcopy(data + (g1,-1)), cp.deepcopy(data + (g2, 0))
+        if data:
+            g1[0] = -1
+            g2[0] = 1
+            return 0, cp.deepcopy(data + (g1,-1)), cp.deepcopy(data + (g2, 0))
+        else:
+            return 0, data, data
 
     maxBid = 0
     for bid in bid_list:
@@ -58,9 +62,12 @@ def get_next_bid(auction, bid_list, data):
         if overlap:
             b = b + 1
             continue
-        g1[b] = -1
-        g2[b] = 1
-        return b, cp.deepcopy(data + (g1,-1)), cp.deepcopy(data + (g2, 0))
+        if data:
+            g1[b] = -1
+            g2[b] = 1
+            return b, cp.deepcopy(data + (g1,-1)), cp.deepcopy(data + (g2, 0))
+        else:
+            return b, data, data
     return None
 
 
@@ -115,12 +122,13 @@ def auction_heuristic(auction, bid_list, data):
                     constraint.append(0)
             A.append(constraint)
         slackVars = len(A)
+        slackStart = len(A[0])
         for idx, constraint in enumerate(A):
             for i in range(0, slackVars):
                 constraint.append(1 if idx== i else 0)
             b.append(1)
         for i in range(0, slackVars):
-            I.append(slackVars+i-1)
+            I.append(slackStart+i)
             c.append(0)
 
         #print "I",I
