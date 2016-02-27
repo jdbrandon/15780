@@ -200,7 +200,7 @@ def gomory_cut(I, A, b, m):
         if i < m:
             xi = AiInv.dot(b)[k]
             f = xi - np.floor(xi)
-            if f != 0:
+            if (f >= 1e-12) and ((1-f) >= 1e-12):
                 if minv > i:
                     minxi = xi
                     minv = i
