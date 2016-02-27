@@ -274,6 +274,7 @@ def get_next_bid_better(auction, bid_list, data):
         b = b + 1
     maxv = None
     maxb = None
+    validBids.reverse()
     for b in validBids:
         v = auction[1][b][1]
         if not maxv or v>maxv:
