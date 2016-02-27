@@ -131,24 +131,12 @@ def auction_heuristic(auction, bid_list, data):
             I.append(slackStart+i)
             c.append(0)
 
-        #print "I",I
-        #print "c",c
-        #print "A",np.array(A)
-        #print "b",b
-
         val, soln, I = simplex_reference(np.array(I), np.array(c), np.array(A), np.array(b))
         newdata = (np.array(I),np.array(c),np.array(A),np.array(b),-val,soln)
     else:
         #complete DUAL LP using data
         I, c, A, b, val, soln, g, h = cp.deepcopy(data)
         branchBid = bid_list[len(bid_list)-1]
-
-        #print "I",I
-        #print "c",c
-        #print "A",A
-        #print "b",b
-        #print "g",g
-        #print "h",h
 
         nA, nb, nc, ret = add_constraint_reference(I, c, A, b, g, h)
         nval, nsoln, nI = ret
@@ -251,15 +239,56 @@ The start node will be represented by bid_list = [] and data = None
 The autograder will be using your version of auction_heuristic(...), so make sure to get that correct.
 '''
 def get_next_bid_better(auction, bid_list, data):
-    pass
+    items = []  
+    if data:
+        _,_,A,_,_,_ = data
+        g1 = np.zeros(len(A[0]))
+        g2 = np.zeros(len(A[0]))
+    numItems = auction[0]
+    if not bid_list:
+        if data:
+            g1[0] = -1
+            g2[0] = 1
+            return 0, cp.deepcopy(data + (g1,-1)), cp.deepcopy(data + (g2, 0))
+        else:
+            return 0, data, data
+    
+    bidL = []
+    for bid in bid_list:
+        bidL.append(bid[0])
+        if bid[1]:
+            accountItems(items, auction[1][bid[0]])
 
-if __name__ == '__main__':
-    a = (3, [([1,2], 2), ([2,3], 3), ([3], 2), ([1,3], 1)])
-    #print get_next_bid(a, [], [])
-    #print get_next_bid(a, [(0, True)], [])
-    #print get_next_bid(a, [(0, False)], [])
-    #print get_next_bid(a, [(0, False), (1, True)], [])
-    #print get_next_bid(a, [(0, False), (1, False)], [])
+    b = 0 
+    validBids = []
+    while b < (len(auction[1])):
+        if b not in bidL:
+            overlap = False
+            nextBid = auction[1][b]
+            for item in nextBid[0]:
+                if item in items:
+                    overlap = True
+                    break
+            if not overlap:
+                validBids.append(b)
+        b = b + 1
+    maxv = None
+    maxb = None
+    for b in validBids:
+        v = auction[1][b][1]
+        if not maxv or v>maxv:
+            maxv = v
+            maxb = b
+
+    if not maxb:
+        return None
+    else:
+        if data:
+            g1[maxb] = -1
+            g2[maxb] = 1
+            return maxb, cp.deepcopy(data + (g1,-1)), cp.deepcopy(data + (g2,0))
+        else:
+            return maxb, data, data
 
 ##########################################################
 # INPUT description:
