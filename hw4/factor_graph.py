@@ -47,25 +47,32 @@ def factor_sum(f1,vout):
     return f2
         
 def marginal_inference(factors, variables, elim_order=None):
-    facs = []
+    f1 = cp.deepcopy(factors)
+    f = None
     if elim_order:
         for v in elim_order:
-            f1 = None
-            prod = []
-            for fac in factors:
-                if v in fac.variables:
-                    prod.append(fac)
-            if prod:
-                if not f1:
-                    f1 = prod.pop(0)
-                while prod:
-                    f1 = factor_product(f1, prod.pop(0))
-                f1 = factor_sum(f1, v)
-                facs.append(f1)
-        f1 = None
-        if facs:
-            if not f1:
-                f1 = facs.pop(0)
-            while facs:
-                f1 = factor_product(f1, facs.pop(0))
-    return f1
+            prod = [i for i in f1 if v in i.variables]
+            f1 = [i for i in f1 if v not in i.variables]
+            p = list_fac_prod(prod)
+            p = factor_sum(p, v)
+            f1.append(p)
+        f = list_fac_prod(f1)
+    return f
+
+def list_fac_prod(l):
+    p = None
+    while l:
+        if not p:
+            p = l.pop(0)
+            continue
+        p = factor_product(p, l.pop(0))
+        normalize(p)
+    return p
+
+def normalize(p):
+    s = 0
+    for v in p.values():
+        s+=v
+    for v in p.inputs():
+        p[v]/=s
+    return p
