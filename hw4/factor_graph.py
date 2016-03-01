@@ -40,9 +40,7 @@ def factor_product(f1,f2):
 
 def factor_sum(f1,vout):
     d= cp.deepcopy(f1.variables)
-    print "pre",d
     d.pop(vout)
-    print "pos",d
     f2 = Factor(d)
     for ass in f1.inputs():
         f2[ass] += f1[ass]
