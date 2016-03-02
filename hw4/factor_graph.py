@@ -54,7 +54,6 @@ def marginal_inference(factors, variables, elim_order=None):
     f = None
     if elim_order == None:
         elim_order = get_order(f1, variables)
-        return #TODO: remove after we get order down
     for v in elim_order:
         prod = [i for i in f1 if v in i.variables]
         f1 = [i for i in f1 if v not in i.variables]
@@ -87,8 +86,7 @@ def get_order(factors, variables):
         key=min(neighbors, key=neighbors.get)
         neighbors.pop(key)
         order.append(key)
-
-    print order
+    return order
 
 def list_fac_prod(l):
     p = None
