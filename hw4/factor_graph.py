@@ -52,16 +52,43 @@ def factor_sum(f1,vout):
 def marginal_inference(factors, variables, elim_order=None):
     f1 = cp.deepcopy(factors)
     f = None
-    if elim_order:
-        for v in elim_order:
-            prod = [i for i in f1 if v in i.variables]
-            f1 = [i for i in f1 if v not in i.variables]
-            p = list_fac_prod(prod)
-            p = factor_sum(p, v)
-            f1.append(p)
+    if elim_order == None:
+        elim_order = get_order(f1, variables)
+        return #TODO: remove after we get order down
+    for v in elim_order:
+        prod = [i for i in f1 if v in i.variables]
+        f1 = [i for i in f1 if v not in i.variables]
+        p = list_fac_prod(prod)
+        p = factor_sum(p, v)
+        f1.append(p)
     f = list_fac_prod(f1)
     normalize(f)
     return f
+
+def get_order(factors, variables):
+    elimvars = []
+    for v in factors:
+        for var in v.variables:
+            if var not in variables and var not in elimvars:
+                elimvars.append(var)
+    if len(elimvars) < 2:
+        return elimvars
+    neighbors = {}
+    for v in elimvars:
+        neighbors[v] = []
+    for f in factors:
+        for v in f.variables:
+            if v in neighbors:
+                neighbors[v].extend([i for i in f.variables if i != v and i not in v])
+    for k in neighbors:
+        neighbors[k] = len(neighbors[k])
+    order = []
+    while neighbors:
+        key=min(neighbors, key=neighbors.get)
+        neighbors.pop(key)
+        order.append(key)
+
+    print order
 
 def list_fac_prod(l):
     p = None

@@ -38,7 +38,8 @@ f2[{"x2":1, "x3":0}] = 2
 f2[{"x2":1, "x3":1}] = 0.1
 
 print "Test case 1"
-f = factor_graph.marginal_inference([f1,f2], ["x1","x3"], ["x2"])
+#f = factor_graph.marginal_inference([f1,f2], ["x1","x3"], ["x2"])
+f = factor_graph.marginal_inference([f1,f2], ["x1","x3"], None)
 if f:
     for e in f.inputs():
         print str(e) + " = " + str(f[e])
@@ -61,7 +62,8 @@ f2[{"x2":1, "x3":0}] = 2
 f2[{"x2":1, "x3":1}] = 0.1
 
 print "Test case 2"
-f = factor_graph.marginal_inference([f1,f2], ["x1", "x2", "x3"], [])
+#f = factor_graph.marginal_inference([f1,f2], ["x1", "x2", "x3"], [])
+f = factor_graph.marginal_inference([f1,f2], ["x1", "x2", "x3"], None)
 if f:
     for e in f.inputs():
         print str(e) + " = " + str(f[e])
@@ -95,7 +97,8 @@ f3[{"x3":1, "x4":0}] = 2
 f3[{"x3":1, "x4":1}] = 0.1
 
 print "Test case 3"
-f = factor_graph.marginal_inference([f1,f2,f3], ["x1", "x2", "x3"], ["x4"])
+#f = factor_graph.marginal_inference([f1,f2,f3], ["x1", "x2", "x3"], ["x4"])
+f = factor_graph.marginal_inference([f1,f2,f3], ["x1", "x2", "x3"], None)
 if f:
     for e in f.inputs():
         print str(e) + " = " + str(f[e])
@@ -118,7 +121,8 @@ elim = ["PAP", "CVP", "MINVOLSET", "HISTORY", "ANAPHYLAXIS", "PCWP", "HREKG",
         "PVSAT", "PRESS", "VENTTUBE", "KINKEDTUBE", "VENTLUNG", "VENTALV",
         "INTUBATION", "SAO2", "ARTCO2", "INSUFFANESTH", "CATECHOL", "TPR"]
 print "Test case 4"
-f = factor_graph.marginal_inference(factors, ["BP"], elim)
+#f = factor_graph.marginal_inference(factors, ["BP"], elim)
+f = factor_graph.marginal_inference(factors, ["BP"], None)
 if f:
     for e in f.inputs():
         print str(e) + " = " + str(f[e])
