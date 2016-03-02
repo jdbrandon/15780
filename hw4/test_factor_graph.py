@@ -118,7 +118,7 @@ elim = ["PAP", "CVP", "MINVOLSET", "HISTORY", "ANAPHYLAXIS", "PCWP", "HREKG",
         "PVSAT", "PRESS", "VENTTUBE", "KINKEDTUBE", "VENTLUNG", "VENTALV",
         "INTUBATION", "SAO2", "ARTCO2", "INSUFFANESTH", "CATECHOL", "TPR"]
 print "Test case 4"
-#f = factor_graph.marginal_inference(factors, ["BP"], elim)
+f = factor_graph.marginal_inference(factors, ["BP"], elim)
 if f:
     for e in f.inputs():
         print str(e) + " = " + str(f[e])
