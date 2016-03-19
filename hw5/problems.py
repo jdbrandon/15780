@@ -37,7 +37,12 @@ A policy which should be represented as a list (as explained in the handout)
 The list will give an action for each state
 '''
 def ql_policy(q):
-    return None
+    p = []
+    for state in q:
+        v = max(state)
+        i = state.index(v)
+        p.append(i)
+    return p
 
 '''
 This function performs one step of Q-learning
