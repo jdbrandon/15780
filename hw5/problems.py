@@ -21,6 +21,8 @@ No output is expected
 q should be updated in-place
 '''
 def ql_update(q, alpha, gamma, s, a, r, ss):
+    action = max(q[ss])
+    q[s][a] = alpha * (r + gamma*action) + (1-alpha) * q[s][a]
     pass
 
 
