@@ -1,3 +1,4 @@
+import random
 '''
 This file is where you put your solutions.
 '''
@@ -66,7 +67,15 @@ a is the action that the epsilon-greedy policy would take
 You should also update the Q-function q in-place
 '''
 def ql_iteration(q, gamma, s, a, r, ss):
-    return (None, None)
+    ep = 0.1
+    ql_update(q, 0.3, gamma, s, a, r, ss)
+    greedy_a = q[ss].index(max(q[ss]))
+    random.seed()
+    r = random.random()
+    a = greedy_a
+    if r >= (1 - ep):
+        a = int(random.random()*len(q[ss]))
+    return (greedy_a, a)
 
 '''
 This function performs one step of Q-learning
@@ -90,4 +99,15 @@ a is the action that the epsilon-greedy policy would take
 You should also update the Q-function q in-place
 '''
 def ql_iteration_tuned(i, q, gamma, s, a, r, ss):
-    return (None, None)
+    if i:
+        ep = 1/(i*i)
+    else:
+        ep = 0.1
+    ql_update(q, 0.3, gamma, s, a, r, ss)
+    greedy_a = q[ss].index(max(q[ss]))
+    random.seed()
+    r = random.random()
+    a = greedy_a
+    if r >= (1 - ep):
+        a = int(random.random()*len(q[ss]))
+    return (greedy_a, a)
