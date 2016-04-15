@@ -25,10 +25,10 @@ def error(y_hat,y):
 
 
 # function calls to load data (uncomment to load MINST data)
-#X_train = parse_images("train-images-idx3-ubyte")
-#y_train = parse_labels("train-labels-idx1-ubyte")
-#X_test = parse_images("t10k-images-idx3-ubyte")
-#y_test = parse_labels("t10k-labels-idx1-ubyte")
+X_train = parse_images("train-images-idx3-ubyte")
+y_train = parse_labels("train-labels-idx1-ubyte")
+X_test = parse_images("t10k-images-idx3-ubyte")
+y_test = parse_labels("t10k-labels-idx1-ubyte")
 
 
 # helper functions for loss and neural network activations
@@ -64,7 +64,19 @@ def softmax_gd(X, y, Xt, yt, epochs=10, alpha = 0.5):
     Outputs:
         Theta: 10 x 785 numpy array of trained weights
     """
-    pass
+    X = np.insert(X, len(X[0]), [1], axis = 1)
+    theta = np.zeros((epochs,len(X[0])))
+
+    for t in range(epochs):
+        g = np.zeros((epochs,len(X[0])))
+        prod = X.dot(theta.T)
+        for i in range(len(X)):
+            loss, gradient = softmax_loss(prod[i], y[i])
+            g += gradient.dot(X[i])/len(X)
+        print "loss:", loss, "epoch:", t
+        theta -= alpha * g 
+        #print theta
+    return theta
 
 
 def softmax_sgd(X,y, Xt, yt, epochs=10, alpha = 0.01):
@@ -82,6 +94,12 @@ def softmax_sgd(X,y, Xt, yt, epochs=10, alpha = 0.01):
     Outputs:
         Theta: 10 x 785 numpy array of trained weights
     """
+    theta = np.zeros((10,785))
+    m = 785
+
+    for t in range(epochs):
+        for i in range(m):
+            theta[t][i] = theta[t][i] - alpha * softmax_loss(theta[X[i]][1], y[i])
     pass
 
 
@@ -140,3 +158,6 @@ def nn_sgd(X,y, Xt, yt, W, b, f, epochs=10, alpha = 0.01):
     Output: None (you can directly update the W and b inputs in place)
     """
     pass
+
+softmax_gd(X_train, y_train, X_test, y_test)
+#softmax_sgd(X_train, y_train, X_test, y_test)
