@@ -66,13 +66,14 @@ def softmax_gd(X, y, Xt, yt, epochs=10, alpha = 0.5):
     """
     X = np.insert(X, len(X[0]), [1], axis = 1)
     theta = np.zeros((epochs,len(X[0])))
-
+    avgLoss = 0
     for t in range(epochs):#10
         g = np.zeros((epochs,len(X[0])))
         for i in range(len(X)):#6000
             loss, gradient = softmax_loss(theta.dot(X[i]), y[i])
             g += np.outer(gradient, X[i])/len(X)
-        print "loss:", loss, "epoch:", t
+            avgLoss += loss
+        print "loss:", avgLoss/len(X), "epoch:", t
         theta -= alpha * g 
         #print theta
     return theta
