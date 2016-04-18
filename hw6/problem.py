@@ -100,13 +100,23 @@ def softmax_sgd(X,y, Xt, yt, epochs=10, alpha = 0.01):
     Outputs:
         Theta: 10 x 785 numpy array of trained weights
     """
-    theta = np.zeros((10,785))
-    m = 785
+    X = np.insert(X, len(X[0]), [1], axis = 1)
+    Xt = np.insert(Xt, len(Xt[0]), [1], axis = 1)
+    theta = np.zeros((epochs,len(X[0])))
+    for t in range(epochs):#10
+        avgLoss = 0
+        for i in range(len(Xt)):
+            loss,_ = softmax_loss(theta.dot(Xt[i]), yt[i])
+            avgLoss += loss
+        testLoss = avgLoss/len(Xt)
+        avgLoss = 0
+        for i in range(len(X)):#6000
+            loss, gradient = softmax_loss(theta.dot(X[i]), y[i])
+            theta -= alpha * np.outer(gradient, X[i])
+            avgLoss += loss
+        print "Train loss:", avgLoss/len(X), "Test Loss:", testLoss, "epoch:", t
 
-    for t in range(epochs):
-        for i in range(m):
-            theta[t][i] = theta[t][i] - alpha * softmax_loss(theta[X[i]][1], y[i])
-    pass
+    return theta
 
 
 def nn(x, W, b, f):
@@ -163,7 +173,17 @@ def nn_sgd(X,y, Xt, yt, W, b, f, epochs=10, alpha = 0.01):
         
     Output: None (you can directly update the W and b inputs in place)
     """
-    pass
+    X = np.insert(X, len(X[0]), [1], axis = 1)
+    Xt = np.insert(Xt, len(Xt[0]), [1], axis = 1)
+    theta = np.insert(W, len(W[0]), b, axis = 1)
+    for t in range(epochs):#10
+        for i in range(len(X)):#6000
+            out = nn(X[i], W, b, f)
 
-softmax_gd(X_train, y_train, X_test, y_test)
+        print "Train loss:", avgLoss/len(X), "Test Loss:", testLoss, "epoch:", t
+        theta -= alpha * g 
+    return 
+
+#softmax_gd(X_train, y_train, X_test, y_test)
 #softmax_sgd(X_train, y_train, X_test, y_test)
+nn_sgd(X_train, y_train, X_test, y_test, W, b, f)
