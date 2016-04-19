@@ -135,7 +135,7 @@ def nn(x, W, b, f):
            for z_i and z'_i each being a numpy array of activations/derivatives
     """
     z = []
-    z.append((x,x))
+    z.append((x,np.zeros(np.shape(x))))
     t = x
     for i in range(len(W)):
         t, gv = f[i](W[i].dot(t) + b[i])
