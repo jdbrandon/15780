@@ -164,12 +164,11 @@ def nn_loss(x, y, W, b, f):
     dW = [0] * len(z)
     db = [0] * len(z)
     L, g[-1] = softmax_loss(z[-1][0], y)
-    #g[-1] = grad/z[-1][1]
     for i in xrange(len(W)-1, -1, -1):
         tmp = g[i+1] * z[i+1][1]
         g[i] = W[i].T.dot(tmp)
         db[i] = tmp
-        dW[i] = np.outer(tmp, z[i][1])
+        dW[i] = np.outer(tmp, z[i][0])
     
     return (L, dW, db)
 
