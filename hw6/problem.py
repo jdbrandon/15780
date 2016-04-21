@@ -19,16 +19,16 @@ def parse_labels(filename):
     return one_hot(np.array(struct.unpack('B'*size, f.read(size))), 10)
 
 def error(y_hat,y):
-    return float(np.sum(np.argmax(y_hat,axis=1) != 
-                        np.argmax(y,axis=1)))/y.shape[0]
+    return float(np.sum(np.argmax(y_hat) != 
+                        np.argmax(y)))/y.shape[0]
 
 
 
 # function calls to load data (uncomment to load MINST data)
-#X_train = parse_images("train-images-idx3-ubyte")
-#y_train = parse_labels("train-labels-idx1-ubyte")
-#X_test = parse_images("t10k-images-idx3-ubyte")
-#y_test = parse_labels("t10k-labels-idx1-ubyte")
+X_train = parse_images("train-images-idx3-ubyte")
+y_train = parse_labels("train-labels-idx1-ubyte")
+X_test = parse_images("t10k-images-idx3-ubyte")
+y_test = parse_labels("t10k-labels-idx1-ubyte")
 
 
 # helper functions for loss and neural network activations
@@ -64,22 +64,28 @@ def softmax_gd(X, y, Xt, yt, epochs=10, alpha = 0.5):
     Outputs:
         Theta: 10 x 785 numpy array of trained weights
     """
+    print "Test Err\t|Train Err\t|Test Loss\t|Train Loss\t|Epoch"
     X = np.insert(X, len(X[0]), [1], axis = 1)
     Xt = np.insert(Xt, len(Xt[0]), [1], axis = 1)
     theta = np.zeros((epochs,len(X[0])))
     for t in range(epochs):#10
         avgLoss = 0
+        e = 0
+        for i in range(len(Xt)):
+            loss,_ = softmax_loss(theta.dot(Xt[i]), yt[i])
+            avgLoss += loss
+            e += error(theta.dot(Xt[i]), yt[i])
+        testLoss = avgLoss/len(Xt)
+        testErr = e/len(Xt)
+        avgLoss = 0
+        e = 0
         g = np.zeros((epochs,len(X[0])))
         for i in range(len(X)):#6000
             loss, gradient = softmax_loss(theta.dot(X[i]), y[i])
             g += np.outer(gradient, X[i])/len(X)
             avgLoss += loss
-        trainLoss = avgLoss/len(X)
-        avgLoss = 0
-        for i in range(len(Xt)):
-            loss,_ = softmax_loss(theta.dot(Xt[i]), yt[i])
-            avgLoss += loss
-        print "Train loss:", trainLoss, "Test Loss:", avgLoss/len(Xt), "epoch:", t
+            e += error(theta.dot(X[i]),y[i])
+        print "%.6f\t%.6f\t%.6f\t%.6f\t%d" % (testErr, e/len(X), testLoss, avgLoss/len(X), t)
         theta -= alpha * g 
 
     return theta
@@ -100,21 +106,27 @@ def softmax_sgd(X,y, Xt, yt, epochs=10, alpha = 0.01):
     Outputs:
         Theta: 10 x 785 numpy array of trained weights
     """
+    print "Test Err\t|Train Err\t|Test Loss\t|Train Loss\t|Epoch"
     X = np.insert(X, len(X[0]), [1], axis = 1)
     Xt = np.insert(Xt, len(Xt[0]), [1], axis = 1)
     theta = np.zeros((epochs,len(X[0])))
     for t in range(epochs):#10
         avgLoss = 0
+        e = 0
         for i in range(len(Xt)):
             loss,_ = softmax_loss(theta.dot(Xt[i]), yt[i])
             avgLoss += loss
+            e += error(theta.dot(Xt[i]), yt[i])
         testLoss = avgLoss/len(Xt)
+        testErr = e/len(Xt)
         avgLoss = 0
+        e = 0
         for i in range(len(X)):#6000
             loss, gradient = softmax_loss(theta.dot(X[i]), y[i])
-            theta -= alpha * np.outer(gradient, X[i])
             avgLoss += loss
-        print "Train loss:", avgLoss/len(X), "Test Loss:", testLoss, "epoch:", t
+            e += error(theta.dot(X[i]), y[i])
+            theta -= alpha * np.outer(gradient, X[i])
+        print "%.6f\t%.6f\t%.6f\t%.6f\t%d" % (testErr, e/len(X), testLoss, avgLoss/len(X), t)
 
     return theta
 
@@ -170,7 +182,7 @@ def nn_loss(x, y, W, b, f):
         db[i] = tmp
         dW[i] = np.outer(tmp, z[i][0])
     
-    return (L, dW, db)
+    return (L, dW, db, z)
 
             
 def nn_sgd(X,y, Xt, yt, W, b, f, epochs=10, alpha = 0.01):
@@ -190,25 +202,30 @@ def nn_sgd(X,y, Xt, yt, W, b, f, epochs=10, alpha = 0.01):
         
     Output: None (you can directly update the W and b inputs in place)
     """
+    print "Test Err\t|Train Err\t|Test Loss\t|Train Loss\t|Epoch"
     for t in range(epochs):#10
         avgLoss = 0
+        e = 0
         for i in range(len(Xt)):
-            loss, _, _ = nn_loss(Xt[i], yt[i], W, b, f)
+            loss, _, _, z = nn_loss(Xt[i], yt[i], W, b, f)
             avgLoss += loss
+            e += error(z[-1][0], yt[i])
 
-        trainLoss = avgLoss/len(Xt)
+        testLoss = avgLoss/len(Xt)
+        testErr = e/len(Xt)
+        e = 0
         avgLoss = 0
         for i in range(len(X)):#6000
-            loss, dW, db = nn_loss(X[i], y[i], W, b, f)
+            loss, dW, db, z = nn_loss(X[i], y[i], W, b, f)
             for j in range(len(W)):
                 W[j] -= alpha * dW[j]
                 b[j] -= alpha * db[j]
             avgLoss += loss
+            e += error(z[-1][0],y[i])
 
-        print "train loss:", avgLoss/len(X), "test loss:", trainLoss, "epoch:", t
-
+        print "%.6f\t%.6f\t%.6f\t%.6f\t%d" % (testErr, e/len(X), testLoss, avgLoss/len(X), t)
     return 
 
-#softmax_gd(X_train, y_train, X_test, y_test)
-#softmax_sgd(X_train, y_train, X_test, y_test)
-#nn_sgd(X_train, y_train, X_test, y_test, W, b, f)
+softmax_gd(X_train, y_train, X_test, y_test)
+softmax_sgd(X_train, y_train, X_test, y_test)
+nn_sgd(X_train, y_train, X_test, y_test, W, b, f)
