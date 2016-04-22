@@ -25,10 +25,10 @@ def error(y_hat,y):
 
 
 # function calls to load data (uncomment to load MINST data)
-X_train = parse_images("train-images-idx3-ubyte")
-y_train = parse_labels("train-labels-idx1-ubyte")
-X_test = parse_images("t10k-images-idx3-ubyte")
-y_test = parse_labels("t10k-labels-idx1-ubyte")
+#X_train = parse_images("train-images-idx3-ubyte")
+#y_train = parse_labels("train-labels-idx1-ubyte")
+#X_test = parse_images("t10k-images-idx3-ubyte")
+#y_test = parse_labels("t10k-labels-idx1-ubyte")
 
 
 # helper functions for loss and neural network activations
@@ -41,6 +41,7 @@ f_lin = lambda x : (x, np.ones(x.shape))
 
 # set up a simple deep neural network for MNIST task
 np.random.seed(0)
+#layer_sizes = [784, 400, 200, 100, 10]
 layer_sizes = [784, 200, 100, 10]
 W = [0.1*np.random.randn(n,m) for m,n in zip(layer_sizes[:-1], layer_sizes[1:])]
 b = [0.1*np.random.randn(n) for n in layer_sizes[1:]]
@@ -64,7 +65,7 @@ def softmax_gd(X, y, Xt, yt, epochs=10, alpha = 0.5):
     Outputs:
         Theta: 10 x 785 numpy array of trained weights
     """
-    print "Test Err\t|Train Err\t|Test Loss\t|Train Loss\t|Epoch"
+    print "Test Err\tTrain Err\tTest Loss\tTrain Loss\tEpoch"
     X = np.insert(X, len(X[0]), [1], axis = 1)
     Xt = np.insert(Xt, len(Xt[0]), [1], axis = 1)
     theta = np.zeros((epochs,len(X[0])))
@@ -85,7 +86,7 @@ def softmax_gd(X, y, Xt, yt, epochs=10, alpha = 0.5):
             g += np.outer(gradient, X[i])/len(X)
             avgLoss += loss
             e += error(theta.dot(X[i]),y[i])
-        print "%.6f\t%.6f\t%.6f\t%.6f\t%d" % (testErr, e/len(X), testLoss, avgLoss/len(X), t)
+        print "%.6f\t%.6f\t%.6f\t%.6f\t%d" % (testErr, e/len(X), testLoss,avgLoss/len(X), t)
         theta -= alpha * g 
 
     return theta
@@ -106,7 +107,7 @@ def softmax_sgd(X,y, Xt, yt, epochs=10, alpha = 0.01):
     Outputs:
         Theta: 10 x 785 numpy array of trained weights
     """
-    print "Test Err\t|Train Err\t|Test Loss\t|Train Loss\t|Epoch"
+    print "Test Err\tTrain Err\tTest Loss\tTrain Loss\tEpoch"
     X = np.insert(X, len(X[0]), [1], axis = 1)
     Xt = np.insert(Xt, len(Xt[0]), [1], axis = 1)
     theta = np.zeros((epochs,len(X[0])))
@@ -202,7 +203,7 @@ def nn_sgd(X,y, Xt, yt, W, b, f, epochs=10, alpha = 0.01):
         
     Output: None (you can directly update the W and b inputs in place)
     """
-    print "Test Err\t|Train Err\t|Test Loss\t|Train Loss\t|Epoch"
+    print "Test Err\tTrain Err\tTest Loss\tTrain Loss\tEpoch"
     for t in range(epochs):#10
         avgLoss = 0
         e = 0
@@ -223,9 +224,9 @@ def nn_sgd(X,y, Xt, yt, W, b, f, epochs=10, alpha = 0.01):
             avgLoss += loss
             e += error(z[-1][0],y[i])
 
-        print "%.6f\t%.6f\t%.6f\t%.6f\t%d" % (testErr, e/len(X), testLoss, avgLoss/len(X), t)
+        print "%.6f\t%.6f\t%.6f\t%.6f\t%d" % (testErr, e/len(X), testLoss,avgLoss/len(X), t)
     return 
 
-softmax_gd(X_train, y_train, X_test, y_test)
-softmax_sgd(X_train, y_train, X_test, y_test)
-nn_sgd(X_train, y_train, X_test, y_test, W, b, f)
+#softmax_gd(X_train, y_train, X_test, y_test)
+#softmax_sgd(X_train, y_train, X_test, y_test)
+#nn_sgd(X_train, y_train, X_test, y_test, W, b, f)
