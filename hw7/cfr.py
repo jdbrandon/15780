@@ -25,23 +25,24 @@ def solve_game(game, num_iterations):
     #    strategy_profile[1][0] = [0.508929, 0.491071]
     #    strategy_profile[1][1] = [0.666667, 0.333333]
     strategy_profile = {0:{}, 1:{}}
-
     for node in range(game.num_nodes):
         tmp = {}
+        #TODO: make strategy based on infoset rather than node
         if not game.is_leaf(node):
             n = game.get_num_actions_node(node)
-            for i in game.node_action_names[node]:
+            regret[node] = {}
+            for i in range(n):
+                regret[node][i] = 0
                 tmp[i] = 1/float(n)
             p = game.get_current_player(node)
             strategy_profile[p][node] = tmp
 
-    print strategy_profile
     #######################
     # Implement CFR in here
     #######################
     for i in range(num_iterations):
-        print cfr(game, game.get_root(), [1, 1], strategy_profile)
-
+        cfr(game, game.get_root(), [1, 1], strategy_profile)
+    print strategy_profile
     return strategy_profile
 
 def cfr(game, node, reach, sp):
@@ -54,34 +55,38 @@ def cfr(game, node, reach, sp):
 
     ev = np.zeros(2)
     actions = game.node_action_names[node]
-    if(reach[player] > 0 ):
-        print "reach"
+    if(player  == -1):
         for i, a in enumerate(actions):
             new_reach = []
-            new_reach.append(reach[0] * sp[player][node][a])
-            new_reach.append(reach[1] * sp[player][node][a])
-            print ev
+            new_reach.append(reach[0] * game.get_nature_probability(node,a)) #may need to use i instead of a
+            new_reach.append(reach[1] * game.get_nature_probability(node,a))
             ev += cfr(game, game.get_child_id(node, i), new_reach, sp)
-            print ev
     else:
-        print "no reach"
         action_ev = {}
         opponent = 1-player
         for i, a in enumerate(actions):
-            p = sp[player][node][a]
-            sp[player][node][a] += reach[player] * p
+            new_reach = [0,0]
+            p = sp[player][node][i]
+            sp[player][node][i] += reach[player] * p
             new_reach[player] = reach[player] * p
             new_reach[opponent] = reach[opponent]
-            action_ev[a] = cfr(game, game.get_child_id(node, a), new_reach, sp)
+            action_ev[a] = cfr(game, game.get_child_id(node, i), new_reach, sp)
             ev[player] += p * action_ev[a][player]
-            ev[opponent] += action_ev[opponent]
-        #for a in actions:
+            ev[opponent] += action_ev[a][opponent]
+        for a in actions:
+            regret[node][i] += (action_ev[a][player]-ev[player])
     return normalize(ev)
 
 def normalize(ev):
+    print "start", ev
+    ev[0] = 0 if ev[0] < 0 else ev[0]
+    ev[1] = 0 if ev[1] < 0 else ev[1]
     s = ev[0]+ev[1]
-    print ev
-    return [ev[0]/s,ev[1]/s]
+    ev = [ev[0]/s,ev[1]/s]
+    ev[0] = 0 if ev[0] < 0.0001 else ev[0]
+    ev[1] = 0 if ev[1] < 0.0001 else ev[1]
+    print "normal", ev
+    return ev
 
 
 
