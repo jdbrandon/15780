@@ -27,69 +27,81 @@ def solve_game(game, num_iterations):
     strategy_profile = {0:{}, 1:{}}
     for node in range(game.num_nodes):
         tmp = {}
-        #TODO: make strategy based on infoset rather than node
+        tmpr = {}
         if not game.is_leaf(node):
+            if game.get_current_player(node) == -1:
+                continue
             n = game.get_num_actions_node(node)
-            regret[node] = {}
             for i in range(n):
-                regret[node][i] = 0
+                tmpr[i] = 0
                 tmp[i] = 1/float(n)
             p = game.get_current_player(node)
-            strategy_profile[p][node] = tmp
+            infoSet = game.get_node_infoset(node)
+            if infoSet not in strategy_profile[p]:
+                strategy_profile[p][infoSet] = tmp
+            if infoSet not in regret:
+                regret[(p,infoSet)] = tmpr
 
     #######################
     # Implement CFR in here
     #######################
     for i in range(num_iterations):
-        cfr(game, game.get_root(), [1, 1], strategy_profile)
-    print strategy_profile
+       cfr(game, game.get_root(), [1, 1], strategy_profile)
+       strategy_profile
+    normalize(strategy_profile)
     return strategy_profile
 
 def cfr(game, node, reach, sp):
-    #game.print_node_info(node)
     if game.is_leaf(node):
         u = game.get_leaf_utility(node)
-        return np.array([u * reach[0], -u * reach[1]])
+        return np.array([u * reach[1], -u * reach[0]])
     player = game.get_current_player(node)
-    infoset = game.get_node_infoset(node)
-
     ev = np.zeros(2)
     actions = game.node_action_names[node]
     if(player  == -1):
         for i, a in enumerate(actions):
             new_reach = []
-            new_reach.append(reach[0] * game.get_nature_probability(node,a)) #may need to use i instead of a
-            new_reach.append(reach[1] * game.get_nature_probability(node,a))
+            new_reach.append(reach[0] * game.get_nature_probability(node,i))
+            new_reach.append(reach[1] * game.get_nature_probability(node,i))
             ev += cfr(game, game.get_child_id(node, i), new_reach, sp)
     else:
+        infoset = game.get_node_infoset(node)
         action_ev = {}
         opponent = 1-player
-        for i, a in enumerate(actions):
+        infoSet = game.get_node_infoset(node)
+        prob = getStrategy((player,infoSet), len(actions))
+        for i,_ in enumerate(actions):
             new_reach = [0,0]
-            p = sp[player][node][i]
-            sp[player][node][i] += reach[player] * p
+            p = prob[i]
+            sp[player][infoSet][i] += reach[player] * p
             new_reach[player] = reach[player] * p
             new_reach[opponent] = reach[opponent]
-            action_ev[a] = cfr(game, game.get_child_id(node, i), new_reach, sp)
-            ev[player] += p * action_ev[a][player]
-            ev[opponent] += action_ev[a][opponent]
-        for a in actions:
-            regret[node][i] += (action_ev[a][player]-ev[player])
-    return normalize(ev)
-
-def normalize(ev):
-    print "start", ev
-    ev[0] = 0 if ev[0] < 0 else ev[0]
-    ev[1] = 0 if ev[1] < 0 else ev[1]
-    s = ev[0]+ev[1]
-    ev = [ev[0]/s,ev[1]/s]
-    ev[0] = 0 if ev[0] < 0.0001 else ev[0]
-    ev[1] = 0 if ev[1] < 0.0001 else ev[1]
-    print "normal", ev
+            action_ev[i] = cfr(game, game.get_child_id(node, i), new_reach, sp)
+            ev[player] += p * action_ev[i][player]
+            ev[opponent] += action_ev[i][opponent]
+        for i, _ in enumerate(actions):
+            regret[(player,infoset)][i] += (action_ev[i][player]-ev[player])
     return ev
 
+def getStrategy(node, num_actions):
+    strat = {}
+    s = 0
+    for i in range(num_actions):
+        strat[i] = regret[node][i] if regret[node][i] > 0 else 0
+        s += strat[i]
+    for i in range(num_actions):
+        if s > 0:
+            strat[i] /= float(s)
+        else:
+            strat[i] = 1/float(num_actions)
+    return strat
 
-
+def normalize(sp):
+    for p in sp:
+        for k in sp[p]:
+            s = sum(sp[p][k].values())
+            for a in sp[p][k]:
+                sp[p][k][a] /= s
 
 if __name__ == "__main__":
     # feel free to add any test code you want in here. It will not interfere with our testing of your code.
@@ -103,4 +115,5 @@ if __name__ == "__main__":
     game.read_game_file(filename)
 
     strategy_profile = solve_game(game, iterations)
+
     print game.compute_strategy_profile_ev(strategy_profile)
